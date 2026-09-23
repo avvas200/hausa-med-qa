@@ -58,3 +58,12 @@ RESULTS = ROOT / "results"
 def ensure_dirs():
     for p in (DATA, CACHE, RESULTS):
         p.mkdir(parents=True, exist_ok=True)
+
+# Round-trip quality estimation (notebook 01b). Thresholds only decide which
+# segments a human reviews, so they are set generously; they may be adjusted
+# once, before the adjudication sheet is exported, and the final values are
+# recorded in the manifest.
+QE_MODEL = "facebook/nllb-200-distilled-1.3B"
+QE_TAG = QE_MODEL.split("/")[-1] + "_qe_b4nr4"
+QE_MIN_CHRF_OPTION = 60.0
+QE_MIN_CHRF_QUESTION = 40.0

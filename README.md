@@ -6,7 +6,8 @@ The hypotheses (H1–H4), decision rules, and analysis plan are fixed in [`PRERE
 
 ## Status
 
-- [ ] 01 · Data preparation (sampling, translation, rater sheets)
+- [x] 01 · Data preparation (sampling, repair, translation)
+- [ ] 01b · Translation quality check, review of flagged segments, rater sheets
 - [ ] Human validation of translations (75 items, 2 raters)
 - [ ] Pre-registration frozen
 - [ ] 02 · Baseline evaluation (H1–H3)
@@ -20,9 +21,11 @@ The hypotheses (H1–H4), decision rules, and analysis plan are fixed in [`PRERE
 PREREGISTRATION.md          hypotheses, decision rules, analysis plan
 src/config.py               all fixed settings (seed, sizes, filters, models)
 src/data.py                 filtering, stratified sampling, disjointness, records
-src/translate.py            resumable NLLB-200 translation
+src/translate.py            resumable NLLB-200 translation with passthrough/retry/fallback
+src/qe.py                   round-trip quality check and review-sheet handling
 src/stats.py                McNemar, paired bootstrap, Holm, H1–H4 decision rules
 notebooks/01_data_preparation.ipynb
+notebooks/01b_translation_qe.ipynb
 results/                    small committed outputs (manifests, metrics, figures)
 ```
 

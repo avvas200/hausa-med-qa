@@ -7,4 +7,5 @@ huggingface_hub
 pandas
 numpy
 scipy
+sacrebleu>=2.4
 # added in later notebooks: trl, peft, bitsandbytes

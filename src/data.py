@@ -26,7 +26,7 @@ REPAIRS = [
     (r"\baerio", "arterio"),
     (r"\baoa\b", "aorta"), (r"\baoic\b", "aortic"),
     (r"hypeension", "hypertension"), (r"hypeensive", "hypertensive"),
-    (r"hypeoph", "hypertroph"), (r"hypeon", "hyperton"),
+    (r"hyperoph", "hypertroph"), (r"hypeon", "hyperton"),
     (r"hypehyro", "hyperthyro"), (r"hypeherm", "hypertherm"),
     (r"\bimpoan(t|ce|tly)\b", r"importan\1"),
     (r"\bpoion(s?)\b", r"portion\1"), (r"\bpoal\b", "portal"),
@@ -42,6 +42,7 @@ REPAIRS = [
     (r"\bsho(er|est|ness|ening)?\b", r"short\1"),
     (r"\bsuppo(s|ed|ing|ive)?\b", r"support\1"),
     (r"\bfouh\b", "fourth"), (r"veebra", "vertebra"),
+    (r"\b(?-i:sta(ed|ing)?)\b", r"start\1"),  # lowercase only, keeps STA (artery)
 ]
 _REPAIRS = [(re.compile(p, re.I), r) for p, r in REPAIRS]
 

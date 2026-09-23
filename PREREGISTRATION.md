@@ -75,15 +75,23 @@ All hypotheses, thresholds, and tests below are fixed before evaluation-set resu
 - *Degeneration safeguard:* an output counts as degenerate if the same word appears 3 or more times in a row, if any single word makes up more than 40% of an output of 6+ words, or if the output is longer than 4 × the source length + 20 characters. A degenerate output is retried once with stricter decoding (5 beams, `no_repeat_ngram_size=2`, `repetition_penalty=1.3`). If the retry is also degenerate, the English source is kept (status `fallback_en`), mirroring common use of English loanwords for medical terms in Hausa.
 - *Status recording:* every segment's status (`passthrough` / `translated` / `retried` / `fallback_en`) is recorded, and counts go into the manifest.
 - *Back-translation (for HA→EN):* the same model and settings. Segments kept in English are copied back verbatim.
+
+**Quality check and review of flagged segments.** The safeguards above catch looping output but not fluent mistranslation. Inspection of the first full run found fluent but wrong outputs on short options, for example "Bladder" rendered as an unrelated phrase, and drug names with invented additions. So:
+- *Automatic flagging:* every Hausa segment is back-translated with a *different* model (NLLB-200 distilled 1.3B). Using a different model avoids selecting segments that the translate-test model happens to round-trip well, which would bias H2. A segment is flagged if its round-trip chrF1 against the source is below 60 (options) or 40 (questions), if an option's back-translation is more than 2 × the source word count + 1, or if the Hausa adds a sentence.
+- *Review of evaluation items:* the author, a native Hausa speaker, reviews each flagged evaluation segment and records one decision: `keep`, `english` (use the English term, as is common for medical vocabulary in Hausa), or `edit` (write a corrected Hausa version). This happens before any model is run, without access to model outputs, and without changing which option is correct. A blank decision defaults to `english` for options and `keep` for questions, and defaults are counted. The completed sheet is committed to the repository.
+- *Training pool:* flagged segments fall back to English automatically, with no human review.
+- *Role of the thresholds:* they only determine the review workload. They may be adjusted once, before the review sheet is exported, and the final values are recorded in the manifest.
+
+The evaluation set is therefore *Hausa question stems with Hausa or English answer options*. This reflects realistic Hausa–English code-switching in medical contexts, and the proportion of English options is reported.
 - *Prompt template:* translated once, then hand-corrected by the author.
 
 **Human validation.**
-- *Sample:* 75 randomly selected items (15%), rated independently by the author and at least one other native Hausa speaker.
+- *Sample:* 75 randomly selected items (15%), rated on the *final* Hausa text (after review) independently by the author and at least one other native Hausa speaker who did not take part in the review. This random sample estimates the residual error rate, including errors the automatic flags missed.
 - *Adequacy:* rated 1–5, where 1 means meaning lost and 5 means meaning fully preserved.
 - *Medical-term flag:* whether a medical term was mistranslated. An English loanword kept in Hausa is not counted as an error.
 - *Reporting:* mean adequacy, the proportion of items rated ≥ 4, and inter-rater agreement (quadratic-weighted Cohen's κ).
 
-**Sensitivity analysis.** H1–H3 are repeated twice: (a) excluding items flagged by any rater, and (b) excluding items with any `fallback_en` segment. The primary analysis uses all 500 items. Because the full set is machine-translated, part of the measured gap may reflect translation error rather than model failure. The validation subset bounds how large that share is likely to be.
+**Sensitivity analysis.** H1–H3 are repeated twice: (a) excluding items flagged by any rater, and (b) excluding items with any option kept in English (`fallback_en` or `fallback_en_reviewed`). The primary analysis uses all 500 items. Because the full set is machine-translated, part of the measured gap may reflect translation error rather than model failure. The validation subset bounds how large that share is likely to be.
 
 ## 5. Models and inference
 
@@ -155,6 +163,7 @@ The HKPFS deadline is typically around 1 December; confirm the exact date on the
 ## 10. Threats to validity
 
 - **Translation confound.** Machine-translation errors inflate the apparent gap. This is mitigated by the human-validated subset, the flagged-item sensitivity analysis, and the E1 error coding.
+- **Author review.** The author reviews flagged segments and is also one of the raters, so author-rated quality may be optimistic. Mitigations: a second rater who did not take part in the review, reporting inter-rater agreement, and reporting how many rated items were also reviewed.
 - **English fallback.** Segments kept in English make Hausa items partly English. This biases the measured gap toward zero, a conservative direction for H1, and sensitivity analysis (b) quantifies the effect.
 - **Back-translation artefacts.** Round-tripping can restore English phrasing that the model memorised, which would overstate H2 recovery. This is noted as a caveat in interpreting H2.
 - **Contamination.** English MedMCQA items may appear in pretraining data, which inflates EN accuracy relative to HA. The EN − HA gap therefore mixes language effects with memorisation effects. This is acknowledged explicitly and not resolved in the pilot.
