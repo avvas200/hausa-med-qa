@@ -15,6 +15,9 @@ TRAIN_OVERSAMPLE = 1.4             # sample extra, then drop overlaps with eval
 N_HUMAN_VALIDATION = 75
 N_EXTRA_PERMUTATIONS = 2           # canonical order + 2 reorderings = 3 (H3)
 MAX_QUESTION_WORDS = 150
+# Scope decision (made before any model was run): Dental is ~30% of MedMCQA
+# validation and is outside the study's general-health motivation.
+EXCLUDE_SUBJECTS = ["Dental"]
 NEAR_DUP_JACCARD = 0.8
 
 # Items whose meaning depends on option position or on other options break
@@ -32,10 +35,16 @@ EXCLUDE_QUESTION_PATTERNS = [
 ]
 
 # Translation
-NLLB_MODEL = os.environ.get("HAUSAMED_NLLB", "facebook/nllb-200-distilled-1.3B")
+NLLB_MODEL = os.environ.get("HAUSAMED_NLLB", "facebook/nllb-200-3.3B")
 EN, HA = "eng_Latn", "hau_Latn"
 TRANSLATION_BATCH = 16
 TRANSLATION_MAX_LEN = 512
+MAX_NEW_FACTOR, MAX_NEW_BIAS = 1.6, 10      # max_new_tokens = 1.6 * input_len + 10
+GEN_MAIN = dict(num_beams=4, no_repeat_ngram_size=4, do_sample=False)
+GEN_RETRY = dict(num_beams=5, no_repeat_ngram_size=2, repetition_penalty=1.3, do_sample=False)
+# Cache files are named by this tag, so changing model or settings never
+# silently reuses old translations.
+TRANSLATION_TAG = NLLB_MODEL.split("/")[-1] + "_b4nr4"
 
 LETTERS = ["A", "B", "C", "D"]
 

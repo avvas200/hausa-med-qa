@@ -51,15 +51,30 @@ All hypotheses, thresholds, and tests below are fixed before evaluation-set resu
 
 ## 4. Data
 
-**Source.** MedMCQA validation split, sampled stratified by subject with a fixed seed (`seed=20260923`). The test split is not used because its labels are not public. Before use, the dataset license is checked and recorded. If the AfriMed-QA MCQ subset's license permits it, a second source is added: up to 150 of its items, reported as a separate stratum.
+**Source.** MedMCQA validation split (license: Apache-2.0, per dataset card), sampled stratified by subject with a fixed seed (`seed=20260923`). The test split is not used because its labels are not public.
+
+**Text repair.** MedMCQA contains a scraping artifact in which the letter pair "rt" was deleted from many words (e.g. "aery" for artery, "impoant" for important). Before filtering, question and option text is repaired with the fixed rule list in `src/data.py`. The number of replacements is recorded in the data manifest, and a sample of repaired questions is checked by hand.
+
+**Exclusions.** The following items are removed before sampling, with counts recorded in the manifest:
+- *Dental* subject items. Dental makes up about 30% of the filtered validation split and falls outside this study's general-health motivation. This scope decision was made after inspecting subject counts but before any model was run.
+- Multi-answer items.
+- Items with duplicate options.
+- Items whose options depend on position or on other options ("All of the above", "Both A and B"), because these change meaning under reordering (H3).
+- Items that refer to an image.
+
+**Answer-position imbalance.** Gold answers in the canonical order are not uniformly distributed across A–D. An "always pick the most common letter" baseline is therefore reported alongside every accuracy figure. H1 and H2 are unaffected, since all their conditions share the same canonical order. If the AfriMed-QA MCQ subset's license permits it, a second source is added: up to 150 of its items, reported as a separate stratum.
 
 **Evaluation set.** n = 500 items, 4 options each.
 
 **DPO training pool.** 500 items from the MedMCQA *train* split. This pool is strictly disjoint from the evaluation set, and disjointness is checked by exact and near-duplicate matching on question text.
 
 **Translation.**
-- *Model:* NLLB-200 (distilled 1.3B; fall back to 600M if memory-limited), with greedy decoding and fixed settings. Question stems and each option are translated separately.
-- *Back-translation (for HA→EN):* the same model and settings.
+- *Model and decoding:* NLLB-200 3.3B (bf16), beam search (4 beams, `no_repeat_ngram_size=4`), with `max_new_tokens = 1.6 × input length + 10`. Question stems and each option are translated separately.
+- *Why these settings:* a first pass with the distilled 1.3B model and greedy decoding produced looping, repetitive output on about 10% of segments, mostly short option texts such as anatomical terms. The settings were changed in response. No model had been evaluated at that point.
+- *Passthrough rule:* segments with no letters, or whose letters are all codes (ALLCAPS acronyms, mixed-case codes such as IgA, tokens of at most 2 letters), are copied verbatim.
+- *Degeneration safeguard:* an output counts as degenerate if the same word appears 3 or more times in a row, if any single word makes up more than 40% of an output of 6+ words, or if the output is longer than 4 × the source length + 20 characters. A degenerate output is retried once with stricter decoding (5 beams, `no_repeat_ngram_size=2`, `repetition_penalty=1.3`). If the retry is also degenerate, the English source is kept (status `fallback_en`), mirroring common use of English loanwords for medical terms in Hausa.
+- *Status recording:* every segment's status (`passthrough` / `translated` / `retried` / `fallback_en`) is recorded, and counts go into the manifest.
+- *Back-translation (for HA→EN):* the same model and settings. Segments kept in English are copied back verbatim.
 - *Prompt template:* translated once, then hand-corrected by the author.
 
 **Human validation.**
@@ -68,7 +83,7 @@ All hypotheses, thresholds, and tests below are fixed before evaluation-set resu
 - *Medical-term flag:* whether a medical term was mistranslated. An English loanword kept in Hausa is not counted as an error.
 - *Reporting:* mean adequacy, the proportion of items rated ≥ 4, and inter-rater agreement (quadratic-weighted Cohen's κ).
 
-**Sensitivity analysis.** H1–H3 are repeated excluding items flagged by any rater. The primary analysis uses all 500 items. Because the full set is machine-translated, part of the measured gap may reflect translation error rather than model failure. The validation subset bounds how large that share is likely to be.
+**Sensitivity analysis.** H1–H3 are repeated twice: (a) excluding items flagged by any rater, and (b) excluding items with any `fallback_en` segment. The primary analysis uses all 500 items. Because the full set is machine-translated, part of the measured gap may reflect translation error rather than model failure. The validation subset bounds how large that share is likely to be.
 
 ## 5. Models and inference
 
@@ -115,13 +130,13 @@ Estimates are to be confirmed with a 20-item timing run before the plan is froze
 
 | Stage | Rough estimate |
 |---|---|
-| Translation (500 eval + 500 train + back-translation) | 1–2 h |
+| Translation (500 eval + 500 train + back-translation; measured ~17 min for 1.3B greedy on A100, expect several times longer for 3.3B with beam search) | ~1–1.5 h |
 | Baseline evaluation (3 models × 3,500 short generations) | 3–5 h |
 | DPO pair generation (500 × k = 4 CoT) | 3–4 h |
 | DPO training + evaluation (3 seeds) | 4–6 h |
 | **Total** | **~11–17 h** |
 
-All stages are written to be resumable from cached artefacts, as in the prior study.
+All stages are written to be resumable from cached artefacts, as in the prior study. Runs use Colab Pro (A100 40 GB where available).
 
 ## 9. Timeline
 
@@ -140,6 +155,7 @@ The HKPFS deadline is typically around 1 December; confirm the exact date on the
 ## 10. Threats to validity
 
 - **Translation confound.** Machine-translation errors inflate the apparent gap. This is mitigated by the human-validated subset, the flagged-item sensitivity analysis, and the E1 error coding.
+- **English fallback.** Segments kept in English make Hausa items partly English. This biases the measured gap toward zero, a conservative direction for H1, and sensitivity analysis (b) quantifies the effect.
 - **Back-translation artefacts.** Round-tripping can restore English phrasing that the model memorised, which would overstate H2 recovery. This is noted as a caveat in interpreting H2.
 - **Contamination.** English MedMCQA items may appear in pretraining data, which inflates EN accuracy relative to HA. The EN − HA gap therefore mixes language effects with memorisation effects. This is acknowledged explicitly and not resolved in the pilot.
 - **Scale.** The pilot uses 3–4B models, n = 500, and one intervention model. Results should not be generalised to larger models or other languages.

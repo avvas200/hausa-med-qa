@@ -18,6 +18,59 @@ def normalize(text) -> str:
     return _ws.sub(" ", _punct.sub(" ", str(text).lower())).strip()
 
 
+# MedMCQA scraping artifact: the letter pair "rt" was dropped from many words
+# ("aery" = artery, "impoant" = important). Best-effort repair list; every
+# replacement is counted and a sample is shown in notebook 01 for checking.
+REPAIRS = [
+    (r"\baer(y|ies|ial|iole|ioles|iolar|itis)\b", r"arter\1"),
+    (r"\baerio", "arterio"),
+    (r"\baoa\b", "aorta"), (r"\baoic\b", "aortic"),
+    (r"hypeension", "hypertension"), (r"hypeensive", "hypertensive"),
+    (r"hypeoph", "hypertroph"), (r"hypeon", "hyperton"),
+    (r"hypehyro", "hyperthyro"), (r"hypeherm", "hypertherm"),
+    (r"\bimpoan(t|ce|tly)\b", r"importan\1"),
+    (r"\bpoion(s?)\b", r"portion\1"), (r"\bpoal\b", "portal"),
+    (r"\bcoex\b", "cortex"), (r"\bcoical\b", "cortical"),
+    (r"\bcoico", "cortico"), (r"\bcoisol\b", "cortisol"),
+    (r"\b(osteo|poly|mono|peri|haem|hem)?ahr(?=[aeio])", r"\1arthr"),
+    (r"\bhea\b", "heart"), (r"\bheaburn\b", "heartburn"), (r"\bheabeat", "heartbeat"),
+    (r"\bpaial(ly)?\b", r"partial\1"), (r"\bpaicula", "particula"),
+    (r"\bpaicle(s?)\b", r"particle\1"), (r"\bpauri", "parturi"),
+    (r"\bmoality\b", "mortality"), (r"\binseion(s?)\b", r"insertion\1"),
+    (r"aicular\b", "articular"), (r"\baificial", "artificial"),
+    (r"\bceain(ly)?\b", r"certain\1"), (r"\bcailag", "cartilag"),
+    (r"\bsho(er|est|ness|ening)?\b", r"short\1"),
+    (r"\bsuppo(s|ed|ing|ive)?\b", r"support\1"),
+    (r"\bfouh\b", "fourth"), (r"veebra", "vertebra"),
+]
+_REPAIRS = [(re.compile(p, re.I), r) for p, r in REPAIRS]
+
+
+def repair_text(text: str, counter: dict | None = None) -> str:
+    for pat, repl in _REPAIRS:
+        def sub(m, repl=repl, name=pat.pattern):
+            if counter is not None:
+                counter[name] = counter.get(name, 0) + 1
+            out = m.expand(repl)
+            w = m.group(0)
+            if len(w) > 1 and w.isupper():
+                return out.upper()
+            return out[0].upper() + out[1:] if w[0].isupper() else out
+        text = pat.sub(sub, text)
+    return text
+
+
+def repair_df(df: pd.DataFrame):
+    """Repair question and option text. Returns (df, counts, changed_row_mask)."""
+    counts = {}
+    df = df.copy()
+    before = df[["question"] + OPTS].astype(str).agg("||".join, axis=1)
+    for col in ["question"] + OPTS:
+        df[col] = df[col].map(lambda x: repair_text(x, counts) if isinstance(x, str) else x)
+    after = df[["question"] + OPTS].astype(str).agg("||".join, axis=1)
+    return df, counts, (before != after).values
+
+
 def load_split(split: str) -> pd.DataFrame:
     from datasets import load_dataset
     return load_dataset(C.MEDMCQA, split=split).to_pandas()
@@ -30,6 +83,7 @@ def apply_filters(df: pd.DataFrame):
     q_pat = re.compile("|".join(C.EXCLUDE_QUESTION_PATTERNS), re.I)
 
     rules = [
+        ("excluded_subject", lambda d: ~d["subject_name"].isin(C.EXCLUDE_SUBJECTS)),
         ("multi_answer", lambda d: d["choice_type"] == "single"),
         ("bad_label", lambda d: d["cop"].isin([0, 1, 2, 3])),
         ("empty_option", lambda d: d[OPTS].apply(

@@ -1,5 +1,5 @@
 # torch is preinstalled on Colab; do not reinstall it
-transformers>=4.44
+transformers>=4.56
 datasets>=2.20
 accelerate>=0.33
 sentencepiece
