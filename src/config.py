@@ -65,5 +65,8 @@ def ensure_dirs():
 # recorded in the manifest.
 QE_MODEL = "facebook/nllb-200-distilled-1.3B"
 QE_TAG = QE_MODEL.split("/")[-1] + "_qe_b4nr4"
-QE_MIN_CHRF_OPTION = 60.0
+QE_MIN_CHRF_OPTION = 60.0          # training-pool auto-fallback (as pre-registered)
 QE_MIN_CHRF_QUESTION = 40.0
+# Evaluation review threshold for options, raised from 60 after the first QE
+# run: a 20-segment check found errors in the 60-80 range but only 2/20 at >=80.
+QE_REVIEW_MIN_CHRF_OPTION = 80.0

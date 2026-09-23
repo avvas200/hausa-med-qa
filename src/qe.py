@@ -21,11 +21,13 @@ def chrf1(hyp: str, ref: str) -> float:
     return CHRF(beta=1, lowercase=True).sentence_score(hyp, [ref]).score
 
 
-def flag_reasons(src: str, ha: str, back: str, field: str):
+def flag_reasons(src: str, ha: str, back: str, field: str,
+                 min_option: float = C.QE_MIN_CHRF_OPTION,
+                 min_question: float = C.QE_MIN_CHRF_QUESTION):
     """Return (chrF1 of round trip vs source, list of reasons)."""
     score = chrf1(back, src)
     reasons = []
-    thr = C.QE_MIN_CHRF_OPTION if field == "option" else C.QE_MIN_CHRF_QUESTION
+    thr = min_option if field == "option" else min_question
     if score < thr:
         reasons.append("low_roundtrip")
     if field == "option" and len(back.split()) > 2 * len(src.split()) + 1:
