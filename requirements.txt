@@ -1,0 +1,10 @@
+# torch is preinstalled on Colab; do not reinstall it
+transformers>=4.44
+datasets>=2.20
+accelerate>=0.33
+sentencepiece
+huggingface_hub
+pandas
+numpy
+scipy
+# added in later notebooks: trl, peft, bitsandbytes
