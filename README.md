@@ -7,8 +7,8 @@ The hypotheses (H1–H4), decision rules, and analysis plan are fixed in [`PRERE
 ## Status
 
 - [x] 01 · Data preparation (sampling, repair, translation)
-- [ ] 01b · Translation quality check, review of flagged segments, rater sheets
-- [ ] Human validation of translations (75 items, 2 raters)
+- [x] 01b · Translation quality check, review of flagged segments, rater sheets
+- [x] Human validation of translations (75 items, 2 raters)
 - [ ] Pre-registration frozen
 - [ ] 02 · Baseline evaluation (H1–H3)
 - [ ] 03 · DPO intervention (H4)

@@ -1,0 +1,17 @@
+{
+  "rater1": {
+    "mean_adequacy": 4.52,
+    "prop_adequacy_ge4": 1.0,
+    "term_error_rate": 0.0
+  },
+  "rater2": {
+    "mean_adequacy": 4.36,
+    "prop_adequacy_ge4": 0.987,
+    "term_error_rate": 0.0
+  },
+  "kappa_quadratic": -0.303,
+  "term_error_agreement": 1.0,
+  "items_flagged_by_any_rater": 1,
+  "flag_rule": "adequacy <= 3 or term_error = 1, by either rater",
+  "rated_items_also_reviewed_by_author": 61
+}

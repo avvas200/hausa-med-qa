@@ -1,0 +1,142 @@
+{
+  "created": "2026-09-23 04:51:23",
+  "seed": 20260923,
+  "dataset": "openlifescienceai/medmcqa",
+  "dataset_license_field": [
+    "apache-2.0"
+  ],
+  "translator": "facebook/nllb-200-3.3B",
+  "translation_settings": {
+    "main": {
+      "num_beams": 4,
+      "no_repeat_ngram_size": 4,
+      "do_sample": false
+    },
+    "retry": {
+      "num_beams": 5,
+      "no_repeat_ngram_size": 2,
+      "repetition_penalty": 1.3,
+      "do_sample": false
+    },
+    "max_new": [
+      1.6,
+      10
+    ]
+  },
+  "excluded_subjects": [
+    "Dental"
+  ],
+  "repairs": {
+    "validation": 283,
+    "train": 20416,
+    "validation_rows_changed": 214
+  },
+  "translation_status": {
+    "eval_en2ha": {
+      "translated": 2226,
+      "passthrough": 271,
+      "retried": 3
+    },
+    "pool_en2ha": {
+      "translated": 2249,
+      "passthrough": 250,
+      "retried": 1
+    },
+    "eval_ha2en": {
+      "translated": 2225,
+      "copied": 271,
+      "passthrough": 4
+    }
+  },
+  "items_with_fallback": 95,
+  "filter_log": {
+    "validation": {
+      "start": 4183,
+      "excluded_subject": 1318,
+      "multi_answer": 894,
+      "bad_label": 0,
+      "empty_option": 0,
+      "duplicate_options": 15,
+      "position_dependent_option": 4,
+      "needs_image": 16,
+      "too_long": 0,
+      "remaining": 1936
+    },
+    "train": {
+      "start": 182822,
+      "excluded_subject": 8938,
+      "multi_answer": 58852,
+      "bad_label": 0,
+      "empty_option": 0,
+      "duplicate_options": 700,
+      "position_dependent_option": 270,
+      "needs_image": 566,
+      "too_long": 15,
+      "remaining": 113481
+    }
+  },
+  "train_pool_overlap_dropped": 0,
+  "translation_truncated_inputs": 0,
+  "versions": {
+    "python": "3.13.15",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.16.1",
+    "datasets": "4.8.5"
+  },
+  "gpu": "NVIDIA A100-SXM4-40GB",
+  "sha256": {
+    "eval_en.jsonl": "9c853a8e1458204bb4172c7e25b88c5af0dc59f9fe4d8eeef9a15476a2aaae5f",
+    "eval_ha.jsonl": "eea2175e4d435ddef9659d4d114efebbfbdcd6188b9421b85c3426eb2a95eca7",
+    "eval_ha2en.jsonl": "064b2de877557ab29deac40ad3fbe60881d495844541fde6861f8cc081ca37da",
+    "train_pool_en.jsonl": "4fd829c9a8157690770facfbb98d5ba90e195edaddbfd9d80e4b7c4943500e4a",
+    "train_pool_ha.jsonl": "4b547104d84ce94ca50455a11873cb3bf9f401e8a2aa907cbdbfdcfbc38ddf1e",
+    "validation_ids.json": "cd8a20ef43b74c84624f4fe90da6ba30d63f03bb277ffe0955465dc6b6ba27fe",
+    "fallback_item_ids.json": "df81469dd61f9be7294837038fb89cd762596e624fe679f42f077456a75b22d4",
+    "segment_status.json": "378b724a68940ff47fc513a42e894ca97b035a02bf46690562925692a1aae0a2",
+    "adjudication_eval_done.csv": "5bb9868f24dceb38eb91539dfe88d351256224d4ac5da3251d48e14cc51fcf31"
+  },
+  "qe": {
+    "model": "facebook/nllb-200-distilled-1.3B",
+    "thresholds": {
+      "eval_review_option_chrf1": 80.0,
+      "pool_option_chrf1": 60.0,
+      "question_chrf1": 40.0
+    },
+    "eval_flagged": {
+      "option": 1215,
+      "question": 61
+    },
+    "pool_flagged": {
+      "option": 937,
+      "question": 70
+    },
+    "eval_decisions": {
+      "keep": 1016,
+      "english": 232,
+      "edit": 28
+    },
+    "eval_decisions_defaulted": 0
+  },
+  "final_status": {
+    "eval": {
+      "translated": 951,
+      "passthrough": 271,
+      "kept_after_review": 1016,
+      "post_edited": 28,
+      "fallback_en_reviewed": 232,
+      "retried": 2
+    },
+    "pool": {
+      "translated": 1242,
+      "fallback_en_auto": 1007,
+      "passthrough": 250,
+      "retried": 1
+    },
+    "eval_ha2en": {
+      "translated": 1996,
+      "copied": 503,
+      "passthrough": 1
+    }
+  },
+  "updated": "2026-09-24 12:39:00"
+}

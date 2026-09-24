@@ -2,8 +2,8 @@
 
 **A paired benchmark, robustness audit, and preference-tuning pilot**
 
-Author: Abbas Sani · Status: DRAFT (to be frozen and committed before any model is evaluated on the evaluation set)
-Commit hash of frozen version: `________` · Date frozen: `________`
+Author: Abbas Sani · Status: FROZEN. Frozen before any model was evaluated on the evaluation set.
+Frozen version: the commit that set this status. Its hash and date are recorded in `README.md`.
 
 ---
 
@@ -79,9 +79,11 @@ All hypotheses, thresholds, and tests below are fixed before evaluation-set resu
 **Quality check and review of flagged segments.** The safeguards above catch looping output but not fluent mistranslation. Inspection of the first full run found fluent but wrong outputs on short options, for example "Bladder" rendered as an unrelated phrase, and drug names with invented additions. So:
 - *Automatic flagging:* every Hausa segment is back-translated with a *different* model (NLLB-200 distilled 1.3B). Using a different model avoids selecting segments that the translate-test model happens to round-trip well, which would bias H2. A segment is flagged if its round-trip chrF1 against the source is below 60 (options) or 40 (questions), if an option's back-translation is more than 2 × the source word count + 1, or if the Hausa adds a sentence.
 - *Review of evaluation items:* the author, a native Hausa speaker, reviews each flagged evaluation segment and records one decision: `keep`, `english` (use the English term, as is common for medical vocabulary in Hausa), or `edit` (write a corrected Hausa version). This happens before any model is run, without access to model outputs, and without changing which option is correct. A blank decision defaults to `english` for options and `keep` for questions, and defaults are counted. The completed sheet is committed to the repository.
-- *Training pool:* flagged segments fall back to English automatically, with no human review.
+- *Training pool:* flagged segments fall back to English automatically, with no human review. Training-pool items whose *question stem* fell back to English are excluded from DPO pair generation (section 6), because they are not Hausa questions.
 - *Role of the thresholds:* they only determine the review workload. They may be adjusted once, before the review sheet is exported, and the final values are recorded in the manifest.
 - *Threshold adjustment (made before export, before any model was run):* the first QE run showed that round-trip chrF misses fluent errors, including calques that both NLLB models reverse the same way (e.g. "surface tension" rendered with the Hausa word for emotional tension). A check of 20 random evaluation options scoring ≥ 80 found 2 errors, while samples in the 60–80 range contained several. The option threshold for the *evaluation review* was therefore raised from 60 to 80 (about 1,200 of 1,729 translated options flagged). The *training pool* keeps the original threshold of 60, so that its options stay mostly in Hausa; unreviewed errors in the pool are a limitation for H4.
+
+- *Outcome of the review (recorded before freezing):* 1,276 evaluation segments were flagged (1,215 options, 61 question stems). Decisions: 1,016 `keep`, 232 `english`, 28 `edit`; no decision was left blank. Seven question stems first marked `english` were changed to `keep` or `edit`, because question stems stay in Hausa by design. After review, 232 of 2,000 evaluation options (11.6%) are in English, and 95 of 500 items have at least one English option; in addition, 271 segments are passthrough codes, numbers or acronyms. In the training pool, 937 options and 70 question stems fell back to English automatically.
 
 The evaluation set is therefore *Hausa question stems with Hausa or English answer options*. This reflects realistic Hausa–English code-switching in medical contexts, and the proportion of English options is reported.
 - *Prompt template:* translated once, then hand-corrected by the author.
@@ -90,9 +92,16 @@ The evaluation set is therefore *Hausa question stems with Hausa or English answ
 - *Sample:* 75 randomly selected items (15%), rated on the *final* Hausa text (after review) independently by the author and at least one other native Hausa speaker who did not take part in the review. This random sample estimates the residual error rate, including errors the automatic flags missed.
 - *Adequacy:* rated 1–5, where 1 means meaning lost and 5 means meaning fully preserved.
 - *Medical-term flag:* whether a medical term was mistranslated. An English loanword kept in Hausa is not counted as an error.
-- *Reporting:* mean adequacy, the proportion of items rated ≥ 4, and inter-rater agreement (quadratic-weighted Cohen's κ).
+- *Reporting:* mean adequacy, the proportion of items rated ≥ 4, and inter-rater agreement (quadratic-weighted Cohen's κ). Because ratings turned out to be concentrated at 4–5, where κ is unstable, the report also gives the full rater-by-rater table, exact agreement, agreement within one point, and agreement on "acceptable" (≥ 4). κ remains the pre-registered agreement statistic and is reported as computed.
+- *Rater flag (defined before freezing, used in sensitivity analysis a):* an item is flagged if either rater gave adequacy ≤ 3 or marked a medical-term error.
+- *Results (obtained before freezing; no model had been run):*
+  - Mean adequacy 4.52 (author) and 4.36 (second rater); 100% and 98.7% of items rated ≥ 4.
+  - Medical-term errors marked: 0 by both raters.
+  - Quadratic-weighted κ = −0.30; exact agreement 34.7%; agreement within one point 98.7%; agreement on ≥ 4: 98.7%. The raters agree that almost all translations are acceptable but not on which are a 4 and which a 5 (the second rater is stricter). κ is therefore not informative here.
+  - Items flagged by either rater: 1 of 75. 61 of the 75 rated items also contained segments the author had reviewed.
+  - *Coverage limitation:* both raters reported checking mainly the question stems, and the answer options less closely. The validation therefore estimates stem quality well but does not give a reliable residual error rate for options. The only estimate for unreviewed options (chrF1 ≥ 80) is the author's pre-export check, which found 2 errors in 20 (about 10%, with a wide interval).
 
-**Sensitivity analysis.** H1–H3 are repeated twice: (a) excluding items flagged by any rater, and (b) excluding items with any option kept in English (`fallback_en` or `fallback_en_reviewed`). The primary analysis uses all 500 items. Because the full set is machine-translated, part of the measured gap may reflect translation error rather than model failure. The validation subset bounds how large that share is likely to be.
+**Sensitivity analysis.** H1–H3 are repeated twice: (a) excluding items flagged by any rater (1 item; this analysis is therefore expected to match the primary one closely), and (b) excluding items with any option kept in English (`fallback_en` or `fallback_en_reviewed`). The primary analysis uses all 500 items. Because the full set is machine-translated, part of the measured gap may reflect translation error rather than model failure. The validation subset bounds how large that share is likely to be.
 
 ## 5. Models and inference
 
@@ -120,7 +129,7 @@ If MedGemma access is unavailable, it is replaced by Gemma-3-4B-IT, and the subs
 
 ## 6. Intervention protocol (H4)
 
-1. **Sample reasoning.** For each of the 500 training-pool items in Hausa, sample k = 4 chain-of-thought completions (temperature 0.8) from the base model.
+1. **Sample reasoning.** For each training-pool item whose question stem is in Hausa (430 of 500; the 70 items whose stem fell back to English are excluded), sample k = 4 chain-of-thought completions (temperature 0.8) from the base model.
 2. **Build preference pairs.** Keep items that have at least one correct and at least one incorrect completion. From each, form one (chosen = correct, rejected = incorrect) pair. The final pair count is reported. If fewer than 200 pairs result, k is raised to 8 once, and this contingency is pre-registered here.
 3. **Train.** DPO with LoRA, using the same configuration and hyperparameters as the author's prior study (`dpo-reasoning-transfer`), with 3 seeds.
 4. **Evaluate.** HA accuracy and HA semantic consistency on the evaluation set, plus EN accuracy to check for regression.
@@ -135,7 +144,7 @@ If MedGemma access is unavailable, it is replaced by Gemma-3-4B-IT, and the subs
 
 ## 8. Compute budget (Colab free-tier T4)
 
-Estimates are to be confirmed with a 20-item timing run before the plan is frozen.
+A 20-item timing run was done in notebook 01; the figures below are planning estimates.
 
 | Stage | Rough estimate |
 |---|---|
@@ -165,6 +174,7 @@ The HKPFS deadline is typically around 1 December; confirm the exact date on the
 
 - **Translation confound.** Machine-translation errors inflate the apparent gap. This is mitigated by the human-validated subset, the flagged-item sensitivity analysis, and the E1 error coding.
 - **Author review.** The author reviews flagged segments and is also one of the raters, so author-rated quality may be optimistic. Mitigations: a second rater who did not take part in the review, reporting inter-rater agreement, and reporting how many rated items were also reviewed.
+- **Unvalidated option quality.** Human validation covered mainly question stems (section 4). Unreviewed options with high round-trip scores have an estimated error rate of about 10% from a 20-item check. Option errors would inflate the measured gap; E1 error coding records how often a discordant item traces back to an option error.
 - **English fallback.** Segments kept in English make Hausa items partly English. This biases the measured gap toward zero, a conservative direction for H1, and sensitivity analysis (b) quantifies the effect.
 - **Back-translation artefacts.** Round-tripping can restore English phrasing that the model memorised, which would overstate H2 recovery. This is noted as a caveat in interpreting H2.
 - **Contamination.** English MedMCQA items may appear in pretraining data, which inflates EN accuracy relative to HA. The EN − HA gap therefore mixes language effects with memorisation effects. This is acknowledged explicitly and not resolved in the pilot.
