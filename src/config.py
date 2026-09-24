@@ -53,10 +53,11 @@ ROOT = Path(os.environ.get("HAUSAMED_ROOT", "/content/drive/MyDrive/hausa-med-qa
 DATA = ROOT / "data"
 CACHE = ROOT / "cache"
 RESULTS = ROOT / "results"
+OUTPUTS = ROOT / "outputs"         # raw model outputs, one folder per model
 
 
 def ensure_dirs():
-    for p in (DATA, CACHE, RESULTS):
+    for p in (DATA, CACHE, RESULTS, OUTPUTS):
         p.mkdir(parents=True, exist_ok=True)
 
 # Round-trip quality estimation (notebook 01b). Thresholds only decide which
@@ -70,3 +71,30 @@ QE_MIN_CHRF_QUESTION = 40.0
 # Evaluation review threshold for options, raised from 60 after the first QE
 # run: a 20-segment check found errors in the 60-80 range but only 2/20 at >=80.
 QE_REVIEW_MIN_CHRF_OPTION = 80.0
+
+# Baseline evaluation (notebook 02; PREREGISTRATION.md section 5).
+EVAL_MODELS = {
+    "llama": "meta-llama/Llama-3.2-3B-Instruct",
+    "qwen": "Qwen/Qwen2.5-3B-Instruct",
+    "medgemma": "google/medgemma-4b-it",
+}
+MEDGEMMA_SUBSTITUTE = "google/gemma-3-4b-it"   # only if MedGemma is inaccessible
+EVAL_BATCH = 16
+EVAL_MAX_NEW_TOKENS = 8
+# Conditions: (name, data file, template language, permutation index)
+CONDITIONS = [
+    ("en_p0", "eval_en.jsonl", "en", 0), ("en_p1", "eval_en.jsonl", "en", 1),
+    ("en_p2", "eval_en.jsonl", "en", 2), ("ha_p0", "eval_ha.jsonl", "ha", 0),
+    ("ha_p1", "eval_ha.jsonl", "ha", 1), ("ha_p2", "eval_ha.jsonl", "ha", 2),
+    ("ha2en_p0", "eval_ha2en.jsonl", "en", 0),
+]
+# One fixed zero-shot template per language. The Hausa template was drafted
+# once and must be hand-corrected by the author before the first evaluation run.
+EVAL_PROMPTS = {
+    "en": ("The following is a multiple-choice question about medicine. "
+           "Choose the single best answer. Reply with only the letter (A, B, C or D).\n\n"
+           "Question: {question}\n{options}\nAnswer:"),
+    "ha": ("Ga tambaya mai zaɓi daga cikin amsoshi game da ilimin likitanci. "
+           "Zaɓi amsa ɗaya mafi dacewa. Ka amsa da harafi kawai (A, B, C ko D).\n\n"
+           "Tambaya: {question}\n{options}\nAmsa:"),
+}
