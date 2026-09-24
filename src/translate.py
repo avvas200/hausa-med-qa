@@ -112,7 +112,11 @@ def translate_segments(tr, segs: dict, cache_path, src_lang, tgt_lang,
                                    ensure_ascii=False) + "\n")
                 cache[(k, segs[k])] = (hyp, status)
 
-    todo = [k for k, v in segs.items() if (k, v) not in cache]
+    # A copy request overrides an earlier cached translation of the same text
+    # (e.g. a Hausa segment identical to the English that was later reviewed as
+    # "english": it must be copied back verbatim, not machine-translated).
+    todo = [k for k, v in segs.items()
+            if (k, v) not in cache or (k in copy_keys and cache[(k, v)][1] != "copied")]
     fixed = [(k, segs[k], "copied" if k in copy_keys else "passthrough")
              for k in todo if k in copy_keys or is_passthrough(segs[k])]
     write(fixed)
