@@ -57,13 +57,33 @@ def load_model(name: str):
     return tok, model.eval(), str(dtype).replace("torch.", "")
 
 
+def letter_token_ids(tok):
+    """For each letter, the single-token ids that spell it ("A" and " A")."""
+    if not hasattr(tok, "_letter_ids"):
+        ids = []
+        for L in C.LETTERS:
+            cand = {t[0] for v in (L, " " + L) for t in [tok.encode(v, add_special_tokens=False)]
+                    if len(t) == 1}
+            assert cand, f"no single-token id for {L!r}"
+            ids.append(sorted(cand))
+        tok._letter_ids = ids
+    return tok._letter_ids
+
+
 @torch.inference_mode()
 def generate(tok, model, prompts):
+    """Greedy generation (primary). Also returns, from the same forward pass, the
+    log-probability of each answer letter as the first generated token
+    (secondary letter-probability scoring, deviation 2)."""
     enc = tok(prompts, return_tensors="pt", padding=True, add_special_tokens=False).to(model.device)
     out = model.generate(**enc, max_new_tokens=C.EVAL_MAX_NEW_TOKENS, do_sample=False,
-                         pad_token_id=tok.pad_token_id)
-    return [t.strip() for t in tok.batch_decode(out[:, enc["input_ids"].shape[1]:],
-                                                 skip_special_tokens=True)]
+                         pad_token_id=tok.pad_token_id, return_dict_in_generate=True,
+                         output_logits=True)
+    texts = [t.strip() for t in tok.batch_decode(out.sequences[:, enc["input_ids"].shape[1]:],
+                                                  skip_special_tokens=True)]
+    logp = torch.log_softmax(out.logits[0].float(), dim=-1)
+    lp = torch.stack([logp[:, ids].logsumexp(-1) for ids in letter_token_ids(tok)], dim=-1)
+    return texts, lp.cpu().tolist()
 
 
 def run_condition(tok, model, records, lang, perm_idx, cache_path, prefill=True,
@@ -81,14 +101,18 @@ def run_condition(tok, model, records, lang, perm_idx, cache_path, prefill=True,
     todo = [r for r in records if r["id"] not in done]
     for s in range(0, len(todo), batch_size):
         batch = todo[s:s + batch_size]
-        texts = generate(tok, model, [chat_prompt(tok, r, r["perms"][perm_idx], lang, prefill) for r in batch])
+        texts, lps = generate(tok, model, [chat_prompt(tok, r, r["perms"][perm_idx], lang, prefill)
+                                           for r in batch])
         with open(cache_path, "a", encoding="utf-8") as f:
-            for r, t in zip(batch, texts):
+            for r, t, lp in zip(batch, texts, lps):
                 perm = r["perms"][perm_idx]
                 pos = parse_letter(t)
                 choice = perm[pos] if pos >= 0 else -1
+                pos_lp = max(range(4), key=lambda j: lp[j])
                 row = {"id": r["id"], "raw": t, "pos": pos, "choice": choice,
-                       "gold": r["answer_idx"], "correct": choice == r["answer_idx"]}
+                       "gold": r["answer_idx"], "correct": choice == r["answer_idx"],
+                       "letter_logp": [round(x, 4) for x in lp], "pos_lp": pos_lp,
+                       "choice_lp": perm[pos_lp], "correct_lp": perm[pos_lp] == r["answer_idx"]}
                 f.write(json.dumps(row, ensure_ascii=False) + "\n")
                 done[r["id"]] = row
     return [done[r["id"]] for r in records]
