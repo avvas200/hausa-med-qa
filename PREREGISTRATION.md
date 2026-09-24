@@ -191,3 +191,10 @@ The HKPFS deadline is typically around 1 December; confirm the exact date on the
 - Public GitHub repository with code, cached artefacts, and this frozen pre-registration.
 - The paired EN/HA evaluation set, released only if the source license permits redistribution; otherwise, release the scripts that regenerate it.
 - A technical report of about 6–8 pages, with all hypotheses reported as supported, not supported, or inconclusive under the rules above.
+
+## 13. Deviations after freezing
+ 
+**Deviation 1: answer-turn prefill (decided before any evaluation item was run).**
+- *What changed:* the model's answer turn now begins with the cue word `Answer:` (English template) or `Amsa:` (Hausa template), so the first generated tokens are the answer letter. The templates, greedy decoding, `max_new_tokens=8`, the parser, and the rule that unparseable outputs count as incorrect are unchanged. The change applies to all models, languages and conditions.
+- *Why:* the pre-evaluation smoke test on 10 **training-pool** items showed that, with the Hausa template, Llama-3.2-3B parsed 7/10 and Qwen2.5-3B parsed 1/10: the models repeated the Hausa instruction instead of answering. English parsed 10/10 for all models, and MedGemma parsed 10/10 in both languages. Without the change, the Hausa accuracy of two models would mostly measure instruction echoing, not medical knowledge.
+- *What is kept:* the original set-up without prefill is still run on the evaluation set in the canonical order for English and Hausa (`en_p0_noprefill`, `ha_p0_noprefill`). These runs are exploratory, are not used for H1–H3, and are reported with their parse rates, since format-following failure is itself a finding.

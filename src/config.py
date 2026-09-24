@@ -81,12 +81,19 @@ EVAL_MODELS = {
 MEDGEMMA_SUBSTITUTE = "google/gemma-3-4b-it"   # only if MedGemma is inaccessible
 EVAL_BATCH = 16
 EVAL_MAX_NEW_TOKENS = 8
-# Conditions: (name, data file, template language, permutation index)
+# Assistant-turn prefill (deviation 1, logged in PREREGISTRATION.md): the
+# answer turn starts with this cue so the model's first tokens are the letter.
+EVAL_PREFILL = {"en": "Answer:", "ha": "Amsa:"}
+# Conditions: (name, data file, template language, permutation index, prefill)
 CONDITIONS = [
-    ("en_p0", "eval_en.jsonl", "en", 0), ("en_p1", "eval_en.jsonl", "en", 1),
-    ("en_p2", "eval_en.jsonl", "en", 2), ("ha_p0", "eval_ha.jsonl", "ha", 0),
-    ("ha_p1", "eval_ha.jsonl", "ha", 1), ("ha_p2", "eval_ha.jsonl", "ha", 2),
-    ("ha2en_p0", "eval_ha2en.jsonl", "en", 0),
+    ("en_p0", "eval_en.jsonl", "en", 0, True), ("en_p1", "eval_en.jsonl", "en", 1, True),
+    ("en_p2", "eval_en.jsonl", "en", 2, True), ("ha_p0", "eval_ha.jsonl", "ha", 0, True),
+    ("ha_p1", "eval_ha.jsonl", "ha", 1, True), ("ha_p2", "eval_ha.jsonl", "ha", 2, True),
+    ("ha2en_p0", "eval_ha2en.jsonl", "en", 0, True),
+    # Exploratory (not used for H1-H3): the originally registered set-up without
+    # prefill, canonical order only, to report format-following failure.
+    ("en_p0_noprefill", "eval_en.jsonl", "en", 0, False),
+    ("ha_p0_noprefill", "eval_ha.jsonl", "ha", 0, False),
 ]
 # One fixed zero-shot template per language. The Hausa template was drafted
 # once and must be hand-corrected by the author before the first evaluation run.

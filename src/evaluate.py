@@ -36,9 +36,10 @@ def prompt_text(rec: dict, perm, lang: str) -> str:
     return C.EVAL_PROMPTS[lang].format(question=rec["question"], options=opts)
 
 
-def chat_prompt(tok, rec, perm, lang):
-    return tok.apply_chat_template([{"role": "user", "content": prompt_text(rec, perm, lang)}],
+def chat_prompt(tok, rec, perm, lang, prefill=True):
+    text = tok.apply_chat_template([{"role": "user", "content": prompt_text(rec, perm, lang)}],
                                    tokenize=False, add_generation_prompt=True)
+    return text + C.EVAL_PREFILL[lang] if prefill else text
 
 
 def load_model(name: str):
@@ -65,7 +66,8 @@ def generate(tok, model, prompts):
                                                  skip_special_tokens=True)]
 
 
-def run_condition(tok, model, records, lang, perm_idx, cache_path, batch_size=C.EVAL_BATCH):
+def run_condition(tok, model, records, lang, perm_idx, cache_path, prefill=True,
+                  batch_size=C.EVAL_BATCH):
     """Resumable: items already in cache_path are skipped. Returns rows in record order."""
     cache_path = Path(cache_path)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -79,7 +81,7 @@ def run_condition(tok, model, records, lang, perm_idx, cache_path, batch_size=C.
     todo = [r for r in records if r["id"] not in done]
     for s in range(0, len(todo), batch_size):
         batch = todo[s:s + batch_size]
-        texts = generate(tok, model, [chat_prompt(tok, r, r["perms"][perm_idx], lang) for r in batch])
+        texts = generate(tok, model, [chat_prompt(tok, r, r["perms"][perm_idx], lang, prefill) for r in batch])
         with open(cache_path, "a", encoding="utf-8") as f:
             for r, t in zip(batch, texts):
                 perm = r["perms"][perm_idx]
