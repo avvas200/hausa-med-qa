@@ -2,7 +2,8 @@
 
 A pre-registered pilot measuring how much accuracy and answer stability small open LLMs lose when medical multiple-choice questions are asked in Hausa rather than English, where that loss comes from, and whether a small DPO intervention recovers any of it.
 
-The hypotheses (H1–H4), decision rules, and analysis plan are fixed in [`PREREGISTRATION.md`](PREREGISTRATION.md) before any model is evaluated. Frozen at commit: `________`.
+The hypotheses (H1–H4), decision rules, and analysis plan are fixed in [`PREREGISTRATION.md`](PREREGISTRATION.md) before any model is evaluated. Frozen at commit: `- [6bb50a1] Pre-registration frozen`.
+
 
 ## Status
 
