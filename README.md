@@ -12,6 +12,7 @@ The hypotheses (H1–H4), decision rules, and analysis plan are fixed in [`PRERE
 - [x] Human validation of translations (75 items, 2 raters)
 - [x] Pre-registration frozen
 - [x] 02 · Baseline evaluation (H1–H3)
+- [ ] 02b · E1 error analysis (exploratory)
 - [ ] 03 · DPO intervention (H4)
 - [ ] 04 · Analysis and figures
 - [ ] Report
@@ -26,9 +27,11 @@ src/translate.py            resumable NLLB-200 translation with passthrough/retr
 src/qe.py                   round-trip quality check and review-sheet handling
 src/evaluate.py             prompts, generation, answer parsing, letter-probability scoring
 src/stats.py                McNemar, paired bootstrap, Holm, H1–H4 decision rules
+src/e1.py                   E1 sampling, coding sheet, validation, summary
 notebooks/01_data_preparation.ipynb
 notebooks/01b_translation_qe.ipynb
 notebooks/02_baseline_evaluation.ipynb
+notebooks/02b_error_analysis.ipynb
 results/                    small committed outputs (manifests, metrics, figures)
 ```
 

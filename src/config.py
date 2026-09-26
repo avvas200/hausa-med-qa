@@ -105,3 +105,10 @@ EVAL_PROMPTS = {
            "Zaɓi amsa ɗaya mafi dacewa. Ka amsa da harafi kawai (A, B, C ko D).\n\n"
            "Tambaya: {question}\n{options}\nAmsa:"),
 }
+
+# E1 exploratory error analysis (notebook 02b; deviation 4, logged in
+# PREREGISTRATION.md). Discordant item = correct in en_p0 and wrong in ha_p0
+# under the primary (parsed) scoring. The sample is drawn before any coding.
+E1_MODELS = ["llama", "medgemma"]  # drawn in this order from one seeded RNG
+E1_N_PER_MODEL = 25
+E1_SEED = SEED + 3                 # SEED + 2 was used for the rater sample
