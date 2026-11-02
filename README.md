@@ -20,7 +20,7 @@ Supporting provenance, all checkable with `git log`:
 - [x] Human validation of translations (75 items, 2 raters)
 - [x] Pre-registration frozen
 - [x] 02 · Baseline evaluation (H1–H3)
-- [x] 02b · E1 error analysis (exploratory) — coded; coding under revision, see below
+- [ ] 02b · E1 error analysis (exploratory) — first pass superseded; being re-coded under deviation 5
 - [ ] 03 · DPO intervention (H4)
 - [ ] 04 · Analysis and figures
 - [ ] Report
@@ -56,9 +56,24 @@ Asked in Hausa, none of the three models is meaningfully better than always answ
 | Qwen2.5-3B-Instruct | 0.521 | 0.126 | 39.5 pp |
 | MedGemma-4B-IT | 0.554 | 0.373 | 18.1 pp |
 
-### E1 error analysis — provisional, do not cite
+### E1 error analysis — being re-coded, do not cite
 
-The coded sheet ([`results/e1_coding_done.csv`](results/e1_coding_done.csv), 50 rows) and its summary are committed for transparency, but **the category proportions are being revised and should not be cited yet.** Two problems found on review: 10 of the 29 rows coded as a translation error or medical-term loss point at a segment whose Hausa text is byte-identical to the English (`Placenta`, `CMV`, `Warfarin`, `Atopy`, `AFP`, ...), where no translation error is possible; and the `notes` column is empty on all 50 rows, so no judgement can be audited. E1 is exploratory with no hypothesis attached (`PREREGISTRATION.md` § 3 and deviation 4).
+The first coding pass is superseded. Its sheet and summary are retained as
+[`results/e1_coding_v1_superseded.csv`](results/e1_coding_v1_superseded.csv) and
+`results/e1_summary_v1_superseded.json` so the two passes can be compared, but **its category
+proportions are not citable.** Of the 29 rows coded as a medical-term loss or a translation error,
+10 named a segment whose Hausa is byte-identical to its English (`Placenta`, `CMV`, `Warfarin`,
+`Atopy`, `AFP`, ...), where no translation error is possible because the model sees the same string
+either way; and 13 named an option that was neither the gold answer nor the model's choice, which
+cannot explain a discordance. 20 of the 29 fail at least one check, leaving 9 sound. No note was
+recorded on any of the 50 rows, so no judgement could be audited.
+
+The same 50 rows are being coded again under [`data/e1_codebook.md`](data/e1_codebook.md) — written
+definitions of the four pre-registered categories, a mandatory note per row, and two consistency
+rules the sheet enforces — independently by two native Hausa speakers, with disagreements
+adjudicated and agreement reported. The sample, its seed and the four categories are unchanged.
+See `PREREGISTRATION.md` § 13, deviation 5, committed before any row was re-coded. E1 remains
+exploratory with no hypothesis attached.
 
 ## Layout
 
