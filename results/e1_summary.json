@@ -1,0 +1,166 @@
+{
+  "n_rows": 50,
+  "per_model": {
+    "llama": {
+      "n": 25,
+      "codes": {
+        "format": {
+          "n": 1,
+          "prop": 0.04,
+          "ci95": [
+            0.007,
+            0.195
+          ]
+        },
+        "term": {
+          "n": 10,
+          "prop": 0.4,
+          "ci95": [
+            0.234,
+            0.593
+          ]
+        },
+        "translation": {
+          "n": 4,
+          "prop": 0.16,
+          "ci95": [
+            0.064,
+            0.347
+          ]
+        },
+        "reasoning": {
+          "n": 10,
+          "prop": 0.4,
+          "ci95": [
+            0.234,
+            0.593
+          ]
+        }
+      },
+      "text_error_location": {
+        "other_option": 8,
+        "chosen": 3,
+        "gold": 3
+      },
+      "text_error_segment_status": {
+        "reviewed": 7,
+        "unreviewed": 4,
+        "english": 2,
+        "code_or_number": 1
+      }
+    },
+    "medgemma": {
+      "n": 25,
+      "codes": {
+        "format": {
+          "n": 2,
+          "prop": 0.08,
+          "ci95": [
+            0.022,
+            0.25
+          ]
+        },
+        "term": {
+          "n": 10,
+          "prop": 0.4,
+          "ci95": [
+            0.234,
+            0.593
+          ]
+        },
+        "translation": {
+          "n": 5,
+          "prop": 0.2,
+          "ci95": [
+            0.089,
+            0.391
+          ]
+        },
+        "reasoning": {
+          "n": 8,
+          "prop": 0.32,
+          "ci95": [
+            0.172,
+            0.516
+          ]
+        }
+      },
+      "text_error_location": {
+        "chosen": 5,
+        "gold": 5,
+        "other_option": 5
+      },
+      "text_error_segment_status": {
+        "reviewed": 8,
+        "unreviewed": 4,
+        "code_or_number": 2,
+        "english": 1
+      }
+    },
+    "all": {
+      "n": 50,
+      "codes": {
+        "format": {
+          "n": 3,
+          "prop": 0.06,
+          "ci95": [
+            0.021,
+            0.162
+          ]
+        },
+        "term": {
+          "n": 20,
+          "prop": 0.4,
+          "ci95": [
+            0.276,
+            0.538
+          ]
+        },
+        "translation": {
+          "n": 9,
+          "prop": 0.18,
+          "ci95": [
+            0.098,
+            0.308
+          ]
+        },
+        "reasoning": {
+          "n": 18,
+          "prop": 0.36,
+          "ci95": [
+            0.241,
+            0.499
+          ]
+        }
+      },
+      "text_error_location": {
+        "other_option": 13,
+        "chosen": 8,
+        "gold": 8
+      },
+      "text_error_segment_status": {
+        "reviewed": 15,
+        "unreviewed": 8,
+        "code_or_number": 3,
+        "english": 3
+      }
+    }
+  },
+  "items_drawn_for_both_models": 2,
+  "sample": {
+    "models": [
+      "llama",
+      "medgemma"
+    ],
+    "n_per_model": 25,
+    "seed": 20260926,
+    "discordant_pool_sizes": {
+      "llama": 209,
+      "medgemma": 142
+    }
+  },
+  "sha256": {
+    "e1_coding_done.csv": "93b859222e34f4615dcd3757796f21ba2bfbe3b32245790985961be6206360bb",
+    "e1_key.csv": "69b05e23237db6462f1b78eb7f61dce381563ac199ef3ea5864ccdf7dde1ffd5"
+  }
+}
