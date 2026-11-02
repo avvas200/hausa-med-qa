@@ -8,4 +8,10 @@ pandas
 numpy
 scipy
 sacrebleu>=2.4
-# added in later notebooks: trl, peft, bitsandbytes
+# H4 only (notebooks 03a/03). Hyperparameters are reused from the author's
+# prior study dpo-reasoning-transfer, which trains through Unsloth; on Colab
+# prefer that notebook's pinned Unsloth install over resolving these here.
+# unsloth
+# trl>=0.11
+# peft>=0.12
+# bitsandbytes>=0.43

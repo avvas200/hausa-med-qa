@@ -112,3 +112,45 @@ EVAL_PROMPTS = {
 E1_MODELS = ["llama", "medgemma"]  # drawn in this order from one seeded RNG
 E1_N_PER_MODEL = 25
 E1_SEED = SEED + 3                 # SEED + 2 was used for the rater sample
+
+# ---------------------------------------------------------------------------
+# H4 DPO intervention (notebooks 03a/03; PREREGISTRATION.md section 6).
+# Hyperparameters are reused from the author's prior study
+# `dpo-reasoning-transfer` (src/train.py), as section 6 requires.
+# ---------------------------------------------------------------------------
+DPO_MODEL = EVAL_MODELS["llama"]
+DPO_K = 4                          # CoT samples per item; 8 if fewer than 200 pairs
+DPO_MIN_PAIRS = 200                # pre-registered contingency threshold
+DPO_TEMPERATURE = 0.8
+DPO_TOP_P = 0.95
+DPO_MAX_NEW_TOKENS = 384
+DPO_SEED = SEED + 4                # SEED + 3 was used for the E1 sample
+# LoRA + DPO, copied from dpo-reasoning-transfer/src/train.py so the two
+# studies stay comparable. Do not tune these.
+DPO_LORA = dict(r=16, lora_alpha=16, lora_dropout=0.0, bias="none",
+                target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
+                                "gate_proj", "up_proj", "down_proj"])
+DPO_HPARAMS = dict(beta=0.1, learning_rate=5e-6, num_train_epochs=1,
+                   per_device_train_batch_size=2, gradient_accumulation_steps=4,
+                   warmup_ratio=0.1, max_length=1024, max_prompt_length=512,
+                   weight_decay=0.0, lr_scheduler_type="linear", logging_steps=10)
+DPO_TRAIN_SEEDS = [1, 2, 3]
+
+# Chain-of-thought prompt for pair generation. Section 6 does not fix a
+# template, so this one is specified here.
+# DRAFT: machine-drafted and NOT yet hand-corrected. The author must check it,
+# as was done for EVAL_PROMPTS, and the final wording must be logged as a
+# deviation before any confirmatory H4 run. The pilot gate (notebook 03a) is
+# diagnostic only and may run on the draft.
+DPO_COT_PROMPT = (
+    "Ga tambaya mai zaɓi daga cikin amsoshi game da ilimin likitanci. "
+    "Ka yi bayanin tunaninka a taƙaice da Hausa, sannan ka ƙarasa da layi na ƙarshe "
+    "kamar haka: Amsa: X (inda X yake A, B, C ko D).\n\n"
+    "Tambaya: {question}\n{options}"
+)
+
+# Pilot gate (notebook 03a): a seeded subset of the training pool, generated
+# before committing to the full run. Its completions are cached under the same
+# key as the full run, so nothing is thrown away if the gate says go.
+DPO_PILOT_N = 60
+
