@@ -40,6 +40,34 @@ def check(name, got, want):
         print(f"  FAIL {name}: got {got!r}, want {want!r}")
 
 
+print("0. the CoT prompt, and whether the parser can read what it asks for")
+tmpl = C.DPO_COT_PROMPT
+check("template takes a question", "{question}" in tmpl, True)
+check("template takes options", "{options}" in tmpl, True)
+# Sentence 1 is reused from the author-corrected EVAL_PROMPTS, so the two
+# prompts address the model in the same register.
+shared = C.EVAL_PROMPTS["ha"].split(". ")[0]
+check("opening sentence matches the corrected eval prompt", tmpl.startswith(shared), True)
+check("the approved letter parenthetical is reused", "(A, B, C ko D)" in tmpl, True)
+# Naming a concrete example letter would bias generation towards it, on a task
+# whose baseline is a majority letter.
+check("no concrete example letter is shown",
+      [L for L in C.LETTERS if f"Amsa: {L}" in tmpl], [])
+check("the placeholder is used instead", "Amsa: X" in tmpl, True)
+
+_rec = {"id": "demo", "question": "Wane magani ne ke hana shan taba?",
+        "options": ["Bupropion", "Metformin", "Atenolol", "Warfarin"], "answer_idx": 0}
+rendered = DPO.cot_prompt(_rec)
+check("the question is rendered", _rec["question"] in rendered, True)
+check("all four options are rendered",
+      [L for L in C.LETTERS if f"{L}. " not in rendered], [])
+# The whole point: a chain that obeys the instruction must parse.
+for i, L in enumerate(C.LETTERS):
+    obedient = f"Bupropion magani ne da ake amfani da shi.\nAmsa: {L}"
+    check(f"a chain obeying the instruction parses ({L})", DPO.final_letter(obedient), i)
+    check(f"...and in lower case ({L.lower()})",
+          DPO.final_letter(obedient.replace(f"Amsa: {L}", f"amsa: {L.lower()}")), i)
+
 print("1. final_letter on realistic chain endings")
 L = C.LETTERS
 cases = [
