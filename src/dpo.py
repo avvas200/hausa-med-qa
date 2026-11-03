@@ -33,17 +33,25 @@ from . import data as D
 # letter because generation is prefilled with "Amsa:" and capped at 8 tokens,
 # a chain of thought ends with its answer, so these search from the END.
 _FINAL = re.compile(
-    r"(?i:amsa|answer)\W{0,5}(?:(?i:ita ce|shine|ne|is)\W{1,4})?([ABCD])(?![A-Za-z])")
-_TAIL = re.compile(r"(?<![A-Za-z])\(?([ABCD])[.):]?(?![A-Za-z])")
+    r"(?i:amsa|answer)\W{0,5}(?:(?i:ita ce|shine|ne|is)\W{1,4})?([ABCDabcd])(?![A-Za-z])")
+# The bare-letter fallback is anchored to the very END of the chain, not merely
+# to its closing lines. Hausa sentences open with "A" constantly ("A cikin...",
+# "A nan...", "A karshe..."), so a rule that accepted a letter anywhere in the
+# tail reads that preposition as an answer: it would both inflate the parse rate
+# and bias every cue-less chain towards A, on a task whose headline finding is
+# about an answer-letter baseline.
+_TAIL = re.compile(r"(?<![A-Za-z])\(?([ABCDabcd])[.)\]:,]*\s*$")
 
 
 def final_letter(text: str) -> int:
     """Position 0-3 of the chain's final answer letter, or -1 if none is found.
 
     Tried in order: the last explicit "Amsa:/Answer: X" cue anywhere in the
-    chain, then the last letter-like token in the closing two lines. The second
-    rule is confined to the tail so that a letter mentioned while reasoning is
-    not mistaken for the conclusion.
+    chain, then a bare letter ending the chain. The second rule is anchored to
+    the end so that a letter mentioned while reasoning -- or a Hausa sentence
+    opening with the preposition "A" -- is not mistaken for the conclusion.
+    Both rules accept a lower-case letter; the model is asked for "Amsa: C" but
+    a 3B model at temperature 0.8 does not reliably capitalise.
     """
     matches = list(_FINAL.finditer(text))
     if matches:
@@ -101,6 +109,16 @@ def generate_pool(tok, model, records, cache_path, k=C.DPO_K):
                 if line.strip():
                     r = json.loads(line)
                     done[r["id"]] = r
+    # Section 6 raises k to 8 if the pilot yields fewer than 200 pairs, and the
+    # obvious way to do that is to pass k=8 here. Without this check the cached
+    # k=4 rows would simply be returned, and gate_report would quietly describe
+    # a k=4 run as the k=8 one. Caches are keyed by k in their filename.
+    stale = sorted({r["k"] for r in done.values()} - {k})
+    if stale:
+        raise ValueError(
+            f"{cache_path} holds rows generated with k={stale} but k={k} was asked "
+            f"for. Use a cache path keyed to k (dpo_cot_k{k}.jsonl) so the two runs "
+            f"stay separate, or delete the file to regenerate.")
     todo = [r for r in records if r["id"] not in done]
     for rec in todo:
         chains = sample_completions(tok, model, rec, k=k, seed=C.DPO_SEED)
@@ -182,7 +200,7 @@ def gate_report(rows, pairs, n_full=None) -> dict:
         "n_correct_per_item": {str(i): sum(sum(r["correct"]) == i for r in rows)
                                for i in range(k + 1)},
         "pairs": len(pairs), "pair_yield_rate": round(yield_rate, 3),
-        "projected_pairs_full_pool": (None if n_full is None
+        "projected_pairs_full_pool": (None if n_full is None or not n_items
                                       else int(round(yield_rate * n_full))),
         "min_pairs_threshold": C.DPO_MIN_PAIRS,
         "estimated_skill_rate": round(skill, 3),

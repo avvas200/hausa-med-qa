@@ -123,6 +123,9 @@ notebooks/01_data_preparation.ipynb
 notebooks/01b_translation_qe.ipynb
 notebooks/02_baseline_evaluation.ipynb
 notebooks/02b_error_analysis.ipynb
+notebooks/03a_dpo_pilot.ipynb
+tests/preflight_h4.py       non-GPU pre-flight for the H4 gate; run before booking a GPU
+data/README.md              provenance, licence and attribution for the released sheets
 results/                    small committed outputs (manifests, metrics, figures)
 ```
 

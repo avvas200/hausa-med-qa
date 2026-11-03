@@ -1,0 +1,235 @@
+"""Pre-flight for notebook 03a (H4 pilot gate). Run before booking a GPU.
+
+Exercises every non-GPU path in src/dpo.py against a stub model: answer parsing,
+the pilot subset, the resumable cache, pair construction and the gate report,
+including the edge cases a near-chance model actually produces. The point is
+that nothing here can crash or mislead AFTER a 40-minute generation run.
+
+    PYTHONPATH=. python tests/preflight_h4.py
+
+Three bugs it caught on first run, all fixed in src/dpo.py:
+  * final_letter rejected a lower-case 'amsa: c', which a 3B model at
+    temperature 0.8 emits often - it would have depressed the parse rate the
+    gate exists to measure;
+  * the bare-letter fallback matched a letter anywhere in the closing lines, so
+    a Hausa sentence opening with the preposition 'A' was read as answer A,
+    biasing every cue-less chain towards the very letter the study's baseline
+    is about;
+  * asking generate_pool for k=8 against a k=4 cache returned the k=4 rows in
+    silence - exactly the move section 6 pre-registers when pairs < 200.
+"""
+import json
+import random
+import shutil
+import sys
+import tempfile
+from pathlib import Path
+
+from src import config as C
+from src import dpo as DPO
+
+ok = fail = 0
+
+
+def check(name, got, want):
+    global ok, fail
+    if got == want:
+        ok += 1
+    else:
+        fail += 1
+        print(f"  FAIL {name}: got {got!r}, want {want!r}")
+
+
+print("1. final_letter on realistic chain endings")
+L = C.LETTERS
+cases = [
+    # (chain, expected index, why it is here)
+    ("Bayani...\nAmsa: C", 2, "the format the prompt asks for"),
+    ("Bayani...\nAmsa: C.", 2, "trailing full stop"),
+    ("Bayani...\namsa: c", 2, "lower case"),
+    ("Bayani...\nAmsa ita ce B", 1, "copula variant in the regex"),
+    ("Bayani...\nAmsa shine D", 3, "second copula variant"),
+    ("Reasoning...\nAnswer: A", 0, "model answers in English"),
+    ("Zabin A ba daidai ba ne, saboda haka.\nAmsa: C", 2,
+     "an early letter mentioned while reasoning must not win"),
+    ("Amsa: A\nSai dai a duba kuma.\nAmsa: D", 3, "LAST cue wins, not the first"),
+    ("Da farko muna duba A.\nSaboda haka zabi na shi ne (B)", 1,
+     "no cue word; bare letter in the tail"),
+    ("Tunani mai tsawo...\nC", 2, "bare letter alone on the final line"),
+    ("Babu wata amsa da ta dace a nan.", -1, "no letter at all -> unparseable"),
+    ("A cikin wannan yanayin, Aspirin shine magani.", -1,
+     "'A' opens a sentence and 'Aspirin' starts with A: must NOT be read as a letter"),
+]
+for chain, want, why in cases:
+    got = DPO.final_letter(chain)
+    check(f"final_letter({why})", got, want)
+
+print("2. hausa_stem_items and pilot_subset")
+recs = [{"id": f"i{n:03d}", "question": f"Tambaya {n}?",
+         "options": [f"zabi {n}{x}" for x in "abcd"], "answer_idx": n % 4}
+        for n in range(500)]
+seg = {f"i{n:03d}|q": ("fallback_en" if n % 7 == 0 else "translated") for n in range(500)}
+hausa = DPO.hausa_stem_items(recs, seg)
+check("english stems excluded", len(hausa), 500 - len(range(0, 500, 7)))
+p1 = DPO.pilot_subset(hausa)
+p2 = DPO.pilot_subset(hausa)
+check("pilot size", len(p1), C.DPO_PILOT_N)
+check("pilot is deterministic", [r["id"] for r in p1], [r["id"] for r in p2])
+check("pilot is sorted by id", [r["id"] for r in p1], sorted(r["id"] for r in p1))
+check("pilot items come from the hausa subset",
+      all(r["id"] in {h["id"] for h in hausa} for r in p1), True)
+
+print("3. generate_pool: caching and resume")
+
+
+class StubTok:
+    pad_token_id = 0
+
+    def apply_chat_template(self, msgs, tokenize=False, add_generation_prompt=True):
+        return msgs[0]["content"]
+
+    def __call__(self, text, return_tensors=None, add_special_tokens=False):
+        return self
+
+    def to(self, device):
+        return self
+
+    def __getitem__(self, key):
+        return _Shape()
+
+    def decode(self, seq, skip_special_tokens=True):
+        return seq
+
+
+class _Shape:
+    shape = (1, 0)
+
+
+class StubModel:
+    """Deterministic 'generation': item n gets n%5 correct chains out of k."""
+    device = "cpu"
+
+    def __init__(self, recs):
+        self.by_q = {r["question"]: r for r in recs}
+        self.calls = 0
+
+    def generate(self, **kw):
+        self.calls += 1
+        rec = self._rec
+        n_right = int(rec["id"][1:]) % 5
+        gold = C.LETTERS[rec["answer_idx"]]
+        wrong = [x for x in C.LETTERS if x != gold][0]
+        out = []
+        for j in range(kw["num_return_sequences"]):
+            letter = gold if j < n_right else wrong
+            out.append(f"Tunani kan {rec['id']}...\nAmsa: {letter}")
+        return out
+
+
+def patched_sample(tok, model, rec, k=C.DPO_K, seed=None):
+    model._rec = rec
+    return model.generate(num_return_sequences=k)
+
+
+DPO.sample_completions = patched_sample
+
+tmp = Path(tempfile.mkdtemp())
+cache = tmp / "dpo_cot_k4.jsonl"
+pilot = p1[:20]
+model = StubModel(pilot)
+rows = DPO.generate_pool(StubTok(), model, pilot, cache, k=4)
+check("rows returned", len(rows), 20)
+check("one generate call per item", model.calls, 20)
+check("rows are in record order", [r["id"] for r in rows], [r["id"] for r in pilot])
+
+model2 = StubModel(pilot)
+rows2 = DPO.generate_pool(StubTok(), model2, pilot, cache, k=4)
+check("resume regenerates nothing", model2.calls, 0)
+check("resume returns the same rows", [r["id"] for r in rows2], [r["id"] for r in rows])
+
+# half-written cache, as a dropped Colab session leaves it
+lines = cache.read_text(encoding="utf-8").splitlines()[:12]
+cache.write_text("\n".join(lines) + "\n", encoding="utf-8")
+model3 = StubModel(pilot)
+DPO.generate_pool(StubTok(), model3, pilot, cache, k=4)
+check("resume regenerates only the missing items", model3.calls, 8)
+
+print("4. the k-mismatch trap (section 6 raises k to 8 if pairs < 200)")
+model4 = StubModel(pilot)
+try:
+    DPO.generate_pool(StubTok(), model4, pilot, cache, k=8)
+    check("k=8 against a k=4 cache must raise", "no error", "ValueError")
+except ValueError as e:
+    check("k=8 against a k=4 cache raises", "k=[4]" in str(e).replace(" ", ""), True)
+    check("nothing was regenerated before raising", model4.calls, 0)
+    print(f"   {e}")
+# a k-specific cache path is the documented way out
+model5 = StubModel(pilot)
+rows5 = DPO.generate_pool(StubTok(), model5, pilot, tmp / "dpo_cot_k8.jsonl", k=8)
+check("a separate k=8 cache works", sorted({r["k"] for r in rows5}), [8])
+check("and really generates 8 chains", sorted({len(r["chains"]) for r in rows5}), [8])
+
+print("5. build_pairs and gate_report")
+pairs = DPO.build_pairs(rows, pilot)
+mixed = [r for r in rows if 0 < sum(r["correct"]) < r["k"]]
+check("one pair per mixed item", len(pairs), len(mixed))
+check("no pair from an all-correct or all-wrong item",
+      all(0 < p["n_correct"] < 4 for p in pairs), True)
+for p in pairs:
+    assert p["chosen"] != p["rejected"], p["id"]
+    assert p["chosen_letter"] == p["gold"], p["id"]
+    assert p["rejected_letter"] != p["gold"], p["id"]
+ok += 1
+
+rep = DPO.gate_report(rows, pairs, n_full=430)
+check("parse rate on clean chains", rep["parse_rate"], 1.0)
+check("buckets cover 0..k", sorted(rep["n_correct_per_item"]), ["0", "1", "2", "3", "4"])
+check("buckets sum to n_items", sum(rep["n_correct_per_item"].values()), len(rows))
+check("projection uses the full pool",
+      rep["projected_pairs_full_pool"], int(round(rep["pair_yield_rate"] * 430)))
+
+print("6. gate_report edge cases")
+
+
+def synth(n, k, n_right, parsed=True):
+    return [{"id": f"x{i}", "gold": 0, "k": k,
+             "chains": ["..."] * k,
+             "picks": [0] * n_right + ([1] * (k - n_right) if parsed
+                                       else [-1] * (k - n_right)),
+             "correct": [True] * n_right + [False] * (k - n_right)}
+            for i in range(n)]
+
+
+for label, rows_e, npairs in [
+    ("all chains wrong (acc 0)", synth(10, 4, 0), 0),
+    ("all chains right (acc 1)", synth(10, 4, 4), 0),
+    ("nothing parseable", synth(10, 4, 0, parsed=False), 0),
+    ("at chance (acc 0.25)", synth(10, 4, 1), 10),
+    ("empty run", [], 0),
+]:
+    try:
+        r = DPO.gate_report(rows_e, DPO.build_pairs(rows_e, [
+            {"id": f"x{i}", "question": "q", "options": list("abcd"), "answer_idx": 0}
+            for i in range(len(rows_e))]) if rows_e else [], n_full=430)
+        print(f"   {label:26s} acc={r['accuracy_all_samples']} "
+              f"skill={r['estimated_skill_rate']} "
+              f"luck={r['estimated_luck_share_of_chosen']} pairs={r['pairs']}")
+        ok += 1
+    except Exception as e:
+        fail += 1
+        print(f"   FAIL {label}: {type(e).__name__}: {e}")
+
+print("7. inspection_sample and write_json")
+check("inspection_sample caps at the pair count", len(DPO.inspection_sample(pairs, n=10)),
+      min(10, len(pairs)))
+check("inspection_sample survives n > len(pairs)",
+      len(DPO.inspection_sample(pairs[:3], n=10)), 3)
+h = DPO.write_json(rep, tmp / "sub" / "gate.json")
+check("write_json creates parents and hashes", isinstance(h, str) and len(h) == 64, True)
+check("write_json round-trips",
+      json.load(open(tmp / "sub" / "gate.json", encoding="utf-8"))["pairs"], rep["pairs"])
+
+shutil.rmtree(tmp, ignore_errors=True)
+print()
+print(f"{ok} passed, {fail} failed")
+sys.exit(1 if fail else 0)
