@@ -1,0 +1,10 @@
+﻿hypothesis,model,estimate,95% CI,p (Holm),supported
+H1  Hausa below English,Llama-3.2-3B,0.342,"[0.288, 0.394]",1.71e-29,yes
+H1  Hausa below English,Qwen2.5-3B,0.404,"[0.352, 0.454]",2.35e-42,yes
+H1  Hausa below English,MedGemma-4B,0.194,"[0.144, 0.244]",6.58e-13,yes
+H2  back-translation recovers the gap,Llama-3.2-3B,0.509,"[0.380, 0.629]",3.82e-09,yes
+H2  back-translation recovers the gap,Qwen2.5-3B,0.668,"[0.570, 0.773]",3.00e-22,yes
+H2  back-translation recovers the gap,MedGemma-4B,0.237,"[-0.012, 0.446]",7.30e-02,NO
+H3  consistency lower in Hausa,Llama-3.2-3B,0.46,"[0.406, 0.514]",,yes
+H3  consistency lower in Hausa,Qwen2.5-3B,0.592,"[0.544, 0.638]",,yes
+H3  consistency lower in Hausa,MedGemma-4B,0.17,"[0.112, 0.228]",,yes
