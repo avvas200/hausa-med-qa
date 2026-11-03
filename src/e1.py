@@ -10,6 +10,7 @@ from the coding sheet alone -- the sheet carries the paired EN/HA text, the
 segment statuses, the gold letter and the model's answer -- so exporting,
 validation, agreement and the summary all run without Drive or a GPU.
 """
+import difflib
 import math
 import random
 import re
@@ -255,6 +256,29 @@ def agreement(a, b) -> dict:
                                      pd.Series(b, name="coder2")).to_dict()}
 
 
+def note_similarity(merged: pd.DataFrame) -> dict:
+    """How textually alike the two coders' free-text notes are.
+
+    Independent coders describe the same error in their own words, so their notes
+    overlap in content but not in wording. Near-identical notes mean the second
+    sheet was written with the first in view, in which case the codes are not
+    independent and the agreement figures are not a reliability estimate. The
+    check is reported either way so that independence is evidenced, not asserted.
+    """
+    def norm(s):
+        s = str(s).replace("‘", "'").replace("’", "'").lower()
+        return _ws.sub(" ", s).strip()
+
+    sims = pd.Series([difflib.SequenceMatcher(None, norm(a), norm(b)).ratio()
+                      for a, b in zip(merged["notes_1"], merged["notes_2"])])
+    return {"n": int(len(sims)), "median": round(float(sims.median()), 3),
+            "mean": round(float(sims.mean()), 3), "min": round(float(sims.min()), 3),
+            "max": round(float(sims.max()), 3),
+            "n_at_least_0.95": int((sims >= 0.95).sum()),
+            "n_at_least_0.80": int((sims >= 0.80).sum()),
+            "independent": bool(sims.median() < 0.5)}
+
+
 def merge_coders(path1, path2):
     """Validate both sheets and compare. Returns (merged, agreement, disagreements).
     `disagreements` is a sheet for adjudication: both coders' judgements are shown
@@ -264,6 +288,7 @@ def merge_coders(path1, path2):
         raise ValueError("the two coder sheets cover different rows")
     merged = c1.merge(c2[["row"] + CODING_COLS], on="row", suffixes=("_1", "_2"))
     stats = agreement(merged["code_1"], merged["code_2"])
+    stats["note_similarity"] = note_similarity(merged)
     dis = merged[merged["code_1"] != merged["code_2"]].copy()
     for c in CODING_COLS:
         dis[c] = ""
@@ -345,4 +370,14 @@ def summarise(coded: pd.DataFrame, agreement_stats=None, pools=None) -> dict:
         out["adjudicated_rows"] = int(coded["adjudicated"].sum())
     if agreement_stats is not None:
         out["inter_coder_agreement"] = agreement_stats
+        sim = agreement_stats.get("note_similarity")
+        if sim is not None and not sim["independent"]:
+            out["inter_coder_agreement"]["not_a_reliability_estimate"] = (
+                f"The two coders' notes have median textual similarity "
+                f"{sim['median']} and {sim['n_at_least_0.95']} of {sim['n']} are "
+                f"near-identical, so the second sheet was not written independently "
+                f"of the first. Raw agreement and kappa above describe the two "
+                f"sheets; they do not estimate inter-coder reliability and must "
+                f"not be reported as such."
+            )
     return out

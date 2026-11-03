@@ -20,7 +20,7 @@ Supporting provenance, all checkable with `git log`:
 - [x] Human validation of translations (75 items, 2 raters)
 - [x] Pre-registration frozen
 - [x] 02 · Baseline evaluation (H1–H3)
-- [ ] 02b · E1 error analysis (exploratory) — first pass superseded; being re-coded under deviation 5
+- [x] 02b · E1 error analysis (exploratory) — re-coded under deviation 5; single-coder, see the caveat below
 - [ ] 03a · H4 pilot gate — tooling ready, needs one GPU session
 - [ ] 03 · DPO intervention (H4) — gated on 03a
 - [ ] 04 · Analysis and figures
@@ -57,24 +57,51 @@ Asked in Hausa, none of the three models is meaningfully better than always answ
 | Qwen2.5-3B-Instruct | 0.521 | 0.126 | 39.5 pp |
 | MedGemma-4B-IT | 0.554 | 0.373 | 18.1 pp |
 
-### E1 error analysis — being re-coded, do not cite
+### E1 error analysis (exploratory, re-coded under deviation 5)
 
-The first coding pass is superseded. Its sheet and summary are retained as
-[`results/e1_coding_v1_superseded.csv`](results/e1_coding_v1_superseded.csv) and
-`results/e1_summary_v1_superseded.json` so the two passes can be compared, but **its category
-proportions are not citable.** Of the 29 rows coded as a medical-term loss or a translation error,
-10 named a segment whose Hausa is byte-identical to its English (`Placenta`, `CMV`, `Warfarin`,
-`Atopy`, `AFP`, ...), where no translation error is possible because the model sees the same string
-either way; and 13 named an option that was neither the gold answer nor the model's choice, which
-cannot explain a discordance. 20 of the 29 fail at least one check, leaving 9 sound. No note was
-recorded on any of the 50 rows, so no judgement could be audited.
+Why do models answer an item correctly in English and wrongly in Hausa? 50 such discordant items
+— 25 from Llama, 25 from MedGemma, drawn with a fixed seed before any coding — were coded into the
+four pre-registered categories under [`data/e1_codebook.md`](data/e1_codebook.md): written
+definitions, a mandatory note per row, and six rules the sheet enforces, two of which reject a
+coded segment whose Hausa is identical to its English, or that sits on an option that is neither
+the gold answer nor the model's choice. Pooled over both models (primary; per-model figures are
+descriptive only, because the re-code was unblinded):
 
-The same 50 rows are being coded again under [`data/e1_codebook.md`](data/e1_codebook.md) — written
-definitions of the four pre-registered categories, a mandatory note per row, and two consistency
-rules the sheet enforces — independently by two native Hausa speakers, with disagreements
-adjudicated and agreement reported. The sample, its seed and the four categories are unchanged.
-See `PREREGISTRATION.md` § 13, deviation 5, committed before any row was re-coded. E1 remains
-exploratory with no hypothesis attached.
+| category | n | proportion | 95% CI |
+|---|---|---|---|
+| medical-term loss | 29 | 0.58 | 0.44–0.71 |
+| reasoning failure | 14 | 0.28 | 0.17–0.42 |
+| translation error | 5 | 0.10 | 0.04–0.21 |
+| option-format failure | 2 | 0.04 | 0.01–0.14 |
+
+Of the 34 text errors, **18 sit on the question stem**, 10 on the option the model chose and 6 on
+the gold option; 19 of those segments had passed human review and 15 had not. No row was
+unparseable — all three models followed the letter format in Hausa — so format failure here means a
+broken option surface, not a model that could not answer. Separately, 22 of the 50 rows carry at
+least one option whose Hausa is byte-identical to its English (1.14 per row on average): a medical
+term carried over untranslated cannot itself cause the discordance, and it is recorded as a
+descriptive covariate rather than as translation damage.
+
+**Reliability: the second pass is not independent, and no κ is claimed.** Both sheets validate
+cleanly and agree on all 50 codes and segments, but the two coders' free-text notes have a median
+textual similarity of 0.90, with 22 of 50 near-identical, so the second sheet was written with the
+first in view. `results/e1_summary.json` records this and marks the agreement figures as not a
+reliability estimate. Read E1 as **single-coder** coding under a written codebook with
+machine-enforced consistency rules — a substantially stronger basis than the first pass, but not
+double-coded. `data/e1_coding_coder2.csv` remains blank and available if an independent second
+coder is recruited.
+
+The first pass is superseded and **its proportions are not citable**; its sheet and summary are
+retained as [`results/e1_coding_v1_superseded.csv`](results/e1_coding_v1_superseded.csv) and
+`results/e1_summary_v1_superseded.json` for comparison. Of its 29 text-error rows, 10 named a
+segment identical in both languages (`Placenta`, `CMV`, `Warfarin`, `Atopy`, `AFP`, …) and 13 named
+an option that was neither gold nor chosen — 20 failed at least one check, leaving 9 sound — and no
+row carried a note. Its headline "40% medical-term loss" rested on 6 defensible rows. The same
+rules run over that sheet today reject it on 50 counts of R2, 10 of R4 and 13 of R5. Note also that
+the first pass placed **no** error on the question stem, where the re-code places 18 of 34.
+
+See `PREREGISTRATION.md` § 13, deviation 5, committed before any row was re-coded. The sample, its
+seed and the four categories are unchanged. E1 remains exploratory with no hypothesis attached.
 
 ## Layout
 
