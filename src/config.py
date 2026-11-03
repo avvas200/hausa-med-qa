@@ -137,15 +137,19 @@ DPO_HPARAMS = dict(beta=0.1, learning_rate=5e-6, num_train_epochs=1,
 DPO_TRAIN_SEEDS = [1, 2, 3]
 
 # Chain-of-thought prompt for pair generation. Section 6 does not fix a
-# template, so this one is specified here.
-# DRAFT: machine-drafted and NOT yet hand-corrected. The author must check it,
-# as was done for EVAL_PROMPTS, and the final wording must be logged as a
-# deviation before any confirmatory H4 run. The pilot gate (notebook 03a) is
-# diagnostic only and may run on the draft.
+# template, so this one is specified here. Hand-corrected 2026-11-03 and logged
+# as deviation 6; the machine-drafted wording it replaces is recorded there.
+# Sentence 1 and the "(A, B, C ko D)" parenthetical are reused verbatim from
+# EVAL_PROMPTS["ha"], which the author corrected before the baseline run, so
+# the two prompts address the model in the same register.
+#
+# The closing line must stay in the form "Amsa: X", which dpo.final_letter
+# parses, and X must stay a placeholder: naming a concrete example letter would
+# bias generation towards it, on a task whose baseline is a majority letter.
 DPO_COT_PROMPT = (
     "Ga tambaya mai zaɓi daga cikin amsoshi game da ilimin likitanci. "
-    "Ka yi bayanin tunaninka a taƙaice da Hausa, sannan ka ƙarasa da layi na ƙarshe "
-    "kamar haka: Amsa: X (inda X yake A, B, C ko D).\n\n"
+    "Ka yi bayani a taƙaice da Hausa kan yadda ka kai ga amsar, sannan ka ƙarasa "
+    "da layi mai cewa: Amsa: X, inda X shi ne harafin amsarka (A, B, C ko D).\n\n"
     "Tambaya: {question}\n{options}"
 )
 

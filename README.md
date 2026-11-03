@@ -21,7 +21,7 @@ Supporting provenance, all checkable with `git log`:
 - [x] Pre-registration frozen
 - [x] 02 · Baseline evaluation (H1–H3)
 - [x] 02b · E1 error analysis (exploratory) — re-coded under deviation 5; single-coder plus a verification pass
-- [ ] 03a · H4 pilot gate — tooling ready, needs one GPU session
+- [ ] 03a · H4 pilot gate — pre-flighted and prompt corrected; needs one GPU session
 - [ ] 03 · DPO intervention (H4) — gated on 03a
 - [ ] 04 · Analysis and figures
 - [ ] Report
