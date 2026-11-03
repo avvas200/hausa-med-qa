@@ -96,9 +96,45 @@ print("2. hausa_stem_items and pilot_subset")
 recs = [{"id": f"i{n:03d}", "question": f"Tambaya {n}?",
          "options": [f"zabi {n}{x}" for x in "abcd"], "answer_idx": n % 4}
         for n in range(500)]
-seg = {f"i{n:03d}|q": ("fallback_en" if n % 7 == 0 else "translated") for n in range(500)}
+# The REAL status vocabulary, as written by translate.translate_segments and by
+# notebook 01b cell 17 -- not an invented one. The pool's English stems carry
+# "fallback_en_auto", which an exact match on "fallback_en" misses entirely.
+VOCAB = ["translated", "retried", "passthrough", "fallback_en",
+         "fallback_en_auto", "fallback_en_reviewed"]
+seg = {}
+english = set()
+for n in range(500):
+    if n % 7 == 0:
+        s = "fallback_en_auto"
+    elif n % 11 == 0:
+        s = "fallback_en"
+    elif n % 23 == 0:
+        s = "fallback_en_reviewed"
+    elif n % 5 == 0:
+        s = "passthrough"
+    else:
+        s = "translated"
+    seg[f"i{n:03d}|q"] = s
+    if s.startswith("fallback_en"):
+        english.add(f"i{n:03d}")
 hausa = DPO.hausa_stem_items(recs, seg)
-check("english stems excluded", len(hausa), 500 - len(range(0, 500, 7)))
+check("every English-stem status is excluded", len(hausa), 500 - len(english))
+check("no excluded item survives",
+      [r["id"] for r in hausa if r["id"] in english], [])
+check("passthrough stems are kept (a code is not a fallback)",
+      any(seg[f"{r['id']}|q"] == "passthrough" for r in hausa), True)
+for s in VOCAB:
+    one = [{"id": "z", "question": "q", "options": list("abcd"), "answer_idx": 0}]
+    kept = len(DPO.hausa_stem_items(one, {"z|q": s}))
+    check(f"status {s!r} -> {'dropped' if s.startswith('fallback_en') else 'kept'}",
+          kept, 0 if s.startswith("fallback_en") else 1)
+try:
+    DPO.hausa_stem_items([{"id": "nope", "question": "q", "options": list("abcd"),
+                           "answer_idx": 0}], {})
+    check("a missing stem status must raise", "no error", "KeyError")
+except KeyError as e:
+    check("a missing stem status raises rather than silently including it",
+          "segment_status.json" in str(e), True)
 p1 = DPO.pilot_subset(hausa)
 p2 = DPO.pilot_subset(hausa)
 check("pilot size", len(p1), C.DPO_PILOT_N)

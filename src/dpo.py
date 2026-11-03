@@ -69,10 +69,31 @@ def cot_prompt(rec: dict) -> str:
     return C.DPO_COT_PROMPT.format(question=rec["question"], options=opts)
 
 
+# A stem is shown in English under more than one status, and they are written by
+# different stages: translate_segments sets "fallback_en" when a translation is
+# degenerate after the retry, while notebook 01b sets "fallback_en_auto" for
+# pool segments the QE check flagged, and "fallback_en_reviewed" for evaluation
+# segments a human sent back to English. Matching only the first of these -- as
+# this function originally did -- silently excluded nothing from the pool, where
+# "fallback_en_auto" is the common case.
+ENGLISH_STEM_PREFIX = "fallback_en"
+
+
 def hausa_stem_items(records, seg_status):
-    """Training-pool items whose question stem is actually in Hausa. Section 6
-    excludes the stems that fell back to English (70 of 500)."""
-    return [r for r in records if seg_status[f"{r['id']}|q"] != "fallback_en"]
+    """Training-pool items whose question stem is actually in Hausa.
+
+    Section 6 excludes stems that fell back to English: the model is shown the
+    same English string in both conditions, so those items cannot speak to a
+    Hausa intervention.
+    """
+    missing = [r["id"] for r in records if f"{r['id']}|q" not in seg_status]
+    if missing:
+        raise KeyError(
+            f"{len(missing)} pool item(s) have no question-stem status in "
+            f"segment_status.json (first: {missing[0]}). Re-run notebook 01b "
+            f"cell 17, which writes it.")
+    return [r for r in records
+            if not str(seg_status[f"{r['id']}|q"]).startswith(ENGLISH_STEM_PREFIX)]
 
 
 def pilot_subset(records, n=C.DPO_PILOT_N, seed=C.DPO_SEED):
