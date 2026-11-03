@@ -345,7 +345,8 @@ def _locations(sub: pd.DataFrame) -> dict:
             "text_error_segment_status": pd.Series(statuses).value_counts().to_dict()}
 
 
-def summarise(coded: pd.DataFrame, agreement_stats=None, pools=None) -> dict:
+def summarise(coded: pd.DataFrame, agreement_stats=None, pools=None,
+              coding_procedure=None) -> dict:
     """Pooled proportions are primary. Per-model figures are descriptive only,
     because the author re-coded unblinded (deviation 5)."""
     coded = annotate(coded)
@@ -376,8 +377,10 @@ def summarise(coded: pd.DataFrame, agreement_stats=None, pools=None) -> dict:
                 f"The two coders' notes have median textual similarity "
                 f"{sim['median']} and {sim['n_at_least_0.95']} of {sim['n']} are "
                 f"near-identical, so the second sheet was not written independently "
-                f"of the first. Raw agreement and kappa above describe the two "
-                f"sheets; they do not estimate inter-coder reliability and must "
-                f"not be reported as such."
+                f"of the first. Raw agreement and kappa above describe how far the "
+                f"second pass confirmed the first; they do not estimate inter-coder "
+                f"reliability and must not be reported as such."
             )
+    if coding_procedure is not None:
+        out["coding_procedure"] = coding_procedure
     return out

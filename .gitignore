@@ -1,5 +1,17 @@
-data/
+data/*
 cache/
 *.jsonl
 __pycache__/
 .ipynb_checkpoints/
+
+# Released human-annotation sheets (PREREGISTRATION.md sections 4 and 13).
+# Their provenance, licence and attribution are in data/README.md.
+!data/README.md
+!data/e1_codebook.md
+!data/adjudication_eval_done.csv
+!data/validation_rater1_done.csv
+!data/validation_rater2_done.csv
+!data/e1_coding_coder1.csv
+!data/e1_coding_coder2.csv
+!data/e1_coding_coder1_done.csv
+!data/e1_coding_coder2_done.csv
