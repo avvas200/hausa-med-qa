@@ -20,7 +20,7 @@ Supporting provenance, all checkable with `git log`:
 - [x] Human validation of translations (75 items, 2 raters)
 - [x] Pre-registration frozen
 - [x] 02 · Baseline evaluation (H1–H3)
-- [x] 02b · E1 error analysis (exploratory) — re-coded under deviation 5; single-coder, see the caveat below
+- [x] 02b · E1 error analysis (exploratory) — re-coded under deviation 5; single-coder plus a verification pass
 - [ ] 03a · H4 pilot gate — tooling ready, needs one GPU session
 - [ ] 03 · DPO intervention (H4) — gated on 03a
 - [ ] 04 · Analysis and figures
@@ -82,14 +82,18 @@ least one option whose Hausa is byte-identical to its English (1.14 per row on a
 term carried over untranslated cannot itself cause the discordance, and it is recorded as a
 descriptive covariate rather than as translation damage.
 
-**Reliability: the second pass is not independent, and no κ is claimed.** Both sheets validate
-cleanly and agree on all 50 codes and segments, but the two coders' free-text notes have a median
-textual similarity of 0.90, with 22 of 50 near-identical, so the second sheet was written with the
-first in view. `results/e1_summary.json` records this and marks the agreement figures as not a
-reliability estimate. Read E1 as **single-coder** coding under a written codebook with
-machine-enforced consistency rules — a substantially stronger basis than the first pass, but not
-double-coded. `data/e1_coding_coder2.csv` remains blank and available if an independent second
-coder is recruited.
+**Reliability: this is single-coder coding with a verification pass, and no κ is claimed.**
+Deviation 5 planned independent double coding. What was carried out is weaker: coder 1 coded all
+50 rows, and coder 2 — a second native Hausa speaker — then reviewed coder 1's completed sheet
+row by row against the same codebook, confirming or correcting each row. Coder 2 confirmed every
+code and segment and reworded most notes, so both sheets validate cleanly and agree 50/50, but
+that figure is a confirmation rate, not inter-coder reliability. The repository evidences this
+rather than asserting it: `e1.note_similarity` measures how alike the two sheets' free-text notes
+are, finds a median similarity of 0.90 with 22 of 50 near-identical, and `summarise` stamps the
+agreement block with `not_a_reliability_estimate`. **Report E1 as single-coder coding under a
+written codebook with machine-enforced consistency rules, plus a second-reader verification pass.
+Do not report κ or raw agreement as reliability.** `data/e1_coding_coder2.csv` is released blank,
+so an independent second coder can still be recruited and the figures recomputed in seconds.
 
 The first pass is superseded and **its proportions are not citable**; its sheet and summary are
 retained as [`results/e1_coding_v1_superseded.csv`](results/e1_coding_v1_superseded.csv) and
@@ -130,4 +134,18 @@ Open each notebook in Colab with a GPU runtime and run top to bottom. Every stag
 
 ## Data and scope
 
-Questions come from MedMCQA; check its license before redistributing any derived data. This is a capability evaluation, not a clinical validation; no model here should be used for medical advice.
+Questions come from MedMCQA. Its publishers attach two different licences — the source
+project [github.com/MedMCQA/MedMCQA](https://github.com/MedMCQA/MedMCQA) is MIT, while the Hugging
+Face card carries `license: apache-2.0` and leaves its "Licensing Information" section an unfilled
+placeholder. Both are permissive and permit redistribution of derived text with attribution, so
+the human-annotation sheets are released under [`data/README.md`](data/README.md), which carries
+the attribution and the MedMCQA citation.
+
+**The binding constraint is not MedMCQA but the translator.** The Hausa text was produced with
+NLLB-200-3.3B, which is CC-BY-NC-4.0, so the paired EN–HA set is **non-commercial use only** —
+stricter than either MedMCQA licence. Anyone needing a commercially usable Hausa set must
+retranslate with a permissively licensed model; `src/translate.py` and the manifest make that
+reproducible.
+
+This is a capability evaluation, not a clinical validation; no model here should be used for
+medical advice.

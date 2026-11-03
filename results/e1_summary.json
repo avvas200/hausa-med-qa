@@ -197,7 +197,15 @@
       "n_at_least_0.80": 29,
       "independent": false
     },
-    "not_a_reliability_estimate": "The two coders' notes have median textual similarity 0.902 and 22 of 50 are near-identical, so the second sheet was not written independently of the first. Raw agreement and kappa above describe the two sheets; they do not estimate inter-coder reliability and must not be reported as such."
+    "not_a_reliability_estimate": "The two coders' notes have median textual similarity 0.902 and 22 of 50 are near-identical, so the second sheet was not written independently of the first. Raw agreement and kappa above describe how far the second pass confirmed the first; they do not estimate inter-coder reliability and must not be reported as such."
+  },
+  "coding_procedure": {
+    "design": "two coders, independent, with adjudication",
+    "as_executed": "one coder, then a verification pass by a second native Hausa speaker",
+    "detail": "Coder 1 coded all 50 rows against the codebook. Coder 2, a second native Hausa speaker, reviewed coder 1's completed sheet row by row against the same codebook and recorded a confirmation or a correction, so the second sheet is a verification pass rather than an independent coding. Coder 2 confirmed every code and segment and reworded most notes.",
+    "report_as": "single-coder coding under a written codebook, with a second-reader verification pass",
+    "do_not_report": "Cohen's kappa or raw agreement as inter-coder reliability",
+    "still_possible": "data/e1_coding_coder2.csv is released blank, so an independent second coder can still be recruited and the figures recomputed"
   },
   "sha256": {
     "data/e1_coding_coder1_done.csv": "e7b4583002d321b100fb06d63d31e21d765ca9e21d745f89c19b1feb93514810",
