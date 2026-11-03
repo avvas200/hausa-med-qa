@@ -23,10 +23,15 @@ Supporting provenance, all checkable with `git log`:
 - [x] 02b · E1 error analysis (exploratory) — re-coded under deviation 5; single-coder plus a verification pass
 - [ ] 03a · H4 pilot gate — pre-flighted and prompt corrected; needs one GPU session
 - [ ] 03 · DPO intervention (H4) — gated on 03a
-- [ ] 04 · Analysis and figures
+- [x] 04 · Analysis and figures — H1–H3 and E1 done; the H4 section fills itself in once 03a runs
 - [ ] Report
 
 ## Results so far (H1–H3)
+
+![English versus Hausa accuracy for three small open models, against a majority-letter baseline](results/figures/fig1_accuracy.png)
+
+Regenerate every figure and table with `notebooks/04_analysis_and_figures.ipynb`, or
+`python -c "from src import figures as F; F.all_figures(F.load())"` — neither needs a GPU.
 
 Three models, n = 500 paired items, zero-shot, greedy decoding, answer-letter parsing, unparseable scored as incorrect. Full numbers in [`results/baseline_results.json`](results/baseline_results.json); run provenance in [`results/eval_run_log.json`](results/eval_run_log.json).
 
@@ -76,8 +81,10 @@ descriptive only, because the re-code was unblinded):
 
 Of the 34 text errors, **18 sit on the question stem**, 10 on the option the model chose and 6 on
 the gold option; 19 of those segments had passed human review and 15 had not. No row was
-unparseable — all three models followed the letter format in Hausa — so format failure here means a
-broken option surface, not a model that could not answer. Separately, 22 of the 50 rows carry at
+unparseable — Llama and MedGemma, the two models E1 samples, both parse at 1.00 in Hausa — so
+format failure here means a broken option surface, not a model that could not answer. (Qwen is the
+exception and is not in E1: it parses only 0.47 of its Hausa answers, which is a different failure
+and is reported with the baseline results.) Separately, 22 of the 50 rows carry at
 least one option whose Hausa is byte-identical to its English (1.14 per row on average): a medical
 term carried over untranslated cannot itself cause the discordance, and it is recorded as a
 descriptive covariate rather than as translation damage.
@@ -119,14 +126,17 @@ src/evaluate.py             prompts, generation, answer parsing, letter-probabil
 src/stats.py                McNemar, paired bootstrap, Holm, H1–H4 decision rules
 src/e1.py                   E1 sampling, coding sheet, validation, summary
 src/dpo.py                  H4 CoT sampling, preference pairs, pilot gate
+src/figures.py              report figures and paper tables (no Drive, no GPU)
 notebooks/01_data_preparation.ipynb
 notebooks/01b_translation_qe.ipynb
 notebooks/02_baseline_evaluation.ipynb
 notebooks/02b_error_analysis.ipynb
 notebooks/03a_dpo_pilot.ipynb
+notebooks/04_analysis_and_figures.ipynb
 tests/preflight_h4.py       non-GPU pre-flight for the H4 gate; run before booking a GPU
 data/README.md              provenance, licence and attribution for the released sheets
-results/                    small committed outputs (manifests, metrics, figures)
+results/                    small committed outputs (manifests, metrics)
+results/figures/            figures as PNG and PDF, plus the paper tables as CSV
 ```
 
 Large artefacts (datasets, translations, model outputs) live on Google Drive under `hausa-med-qa/` and are not committed. `results/data_manifest.json` records their SHA-256 hashes.
