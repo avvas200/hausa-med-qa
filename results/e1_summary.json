@@ -1,0 +1,207 @@
+{
+  "n_rows": 50,
+  "codebook": "deviation-5",
+  "primary_pooled": {
+    "n": 50,
+    "codes": {
+      "format": {
+        "n": 2,
+        "prop": 0.04,
+        "ci95": [
+          0.011,
+          0.135
+        ]
+      },
+      "term": {
+        "n": 29,
+        "prop": 0.58,
+        "ci95": [
+          0.442,
+          0.706
+        ]
+      },
+      "translation": {
+        "n": 5,
+        "prop": 0.1,
+        "ci95": [
+          0.043,
+          0.214
+        ]
+      },
+      "reasoning": {
+        "n": 14,
+        "prop": 0.28,
+        "ci95": [
+          0.175,
+          0.417
+        ]
+      }
+    },
+    "text_error_location": {
+      "stem": 18,
+      "chosen": 10,
+      "gold": 6
+    },
+    "text_error_segment_status": {
+      "reviewed": 19,
+      "unreviewed": 15
+    }
+  },
+  "descriptive_per_model": {
+    "llama": {
+      "n": 25,
+      "codes": {
+        "format": {
+          "n": 1,
+          "prop": 0.04,
+          "ci95": [
+            0.007,
+            0.195
+          ]
+        },
+        "term": {
+          "n": 16,
+          "prop": 0.64,
+          "ci95": [
+            0.445,
+            0.798
+          ]
+        },
+        "translation": {
+          "n": 1,
+          "prop": 0.04,
+          "ci95": [
+            0.007,
+            0.195
+          ]
+        },
+        "reasoning": {
+          "n": 7,
+          "prop": 0.28,
+          "ci95": [
+            0.143,
+            0.476
+          ]
+        }
+      },
+      "text_error_location": {
+        "chosen": 7,
+        "stem": 7,
+        "gold": 3
+      },
+      "text_error_segment_status": {
+        "reviewed": 12,
+        "unreviewed": 5
+      }
+    },
+    "medgemma": {
+      "n": 25,
+      "codes": {
+        "format": {
+          "n": 1,
+          "prop": 0.04,
+          "ci95": [
+            0.007,
+            0.195
+          ]
+        },
+        "term": {
+          "n": 13,
+          "prop": 0.52,
+          "ci95": [
+            0.335,
+            0.7
+          ]
+        },
+        "translation": {
+          "n": 4,
+          "prop": 0.16,
+          "ci95": [
+            0.064,
+            0.347
+          ]
+        },
+        "reasoning": {
+          "n": 7,
+          "prop": 0.28,
+          "ci95": [
+            0.143,
+            0.476
+          ]
+        }
+      },
+      "text_error_location": {
+        "stem": 11,
+        "chosen": 3,
+        "gold": 3
+      },
+      "text_error_segment_status": {
+        "unreviewed": 10,
+        "reviewed": 7
+      }
+    }
+  },
+  "untranslated_options": {
+    "rows_with_any_identical_option": 22,
+    "mean_identical_options_per_row": 1.14
+  },
+  "unparseable_rows": 0,
+  "items_drawn_for_both_models": 2,
+  "sample": {
+    "models": [
+      "llama",
+      "medgemma"
+    ],
+    "n_per_model": 25,
+    "seed": 20260926,
+    "discordant_pool_sizes": null
+  },
+  "adjudicated_rows": 0,
+  "inter_coder_agreement": {
+    "n": 50,
+    "raw_agreement": 1.0,
+    "cohen_kappa": 1.0,
+    "confusion": {
+      "format": {
+        "format": 2,
+        "reasoning": 0,
+        "term": 0,
+        "translation": 0
+      },
+      "reasoning": {
+        "format": 0,
+        "reasoning": 14,
+        "term": 0,
+        "translation": 0
+      },
+      "term": {
+        "format": 0,
+        "reasoning": 0,
+        "term": 29,
+        "translation": 0
+      },
+      "translation": {
+        "format": 0,
+        "reasoning": 0,
+        "term": 0,
+        "translation": 5
+      }
+    },
+    "note_similarity": {
+      "n": 50,
+      "median": 0.902,
+      "mean": 0.832,
+      "min": 0.405,
+      "max": 1.0,
+      "n_at_least_0.95": 22,
+      "n_at_least_0.80": 29,
+      "independent": false
+    },
+    "not_a_reliability_estimate": "The two coders' notes have median textual similarity 0.902 and 22 of 50 are near-identical, so the second sheet was not written independently of the first. Raw agreement and kappa above describe the two sheets; they do not estimate inter-coder reliability and must not be reported as such."
+  },
+  "sha256": {
+    "data/e1_coding_coder1_done.csv": "e7b4583002d321b100fb06d63d31e21d765ca9e21d745f89c19b1feb93514810",
+    "data/e1_coding_coder2_done.csv": "a4ce78e71f33ed5da07979020b2a32c3d0027e2e0a77c20cc1c2c25ebdaae89e",
+    "results/e1_key.csv": "c2014f995ad9e76c30737e89199c01dae2407ced6ef16d4700501c098aa7050f"
+  }
+}
