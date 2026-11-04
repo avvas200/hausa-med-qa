@@ -149,3 +149,29 @@ def check_macros(tex="paper/main.tex", numbers="paper/numbers.tex"):
     unused = sorted(defined - used)
     return {"used": len(used), "defined": len(defined),
             "missing": missing, "unused": unused}
+
+
+def check_citations(tex="paper/main.tex", bib="paper/refs.bib"):
+    """Every \\cite key must exist in the .bib. A missing one renders as [?] and
+    is easy to miss in a draft; an unused entry is harmless but worth seeing."""
+    body = re.sub(r"(?m)(?<!\\)%.*$", "", Path(tex).read_text(encoding="utf-8"))
+    cited = set()
+    for group in re.findall(r"\\cite[a-zA-Z]*\{([^}]*)\}", body):
+        cited |= {k.strip() for k in group.split(",") if k.strip()}
+    # Only real entries, not the commented-out TODO block.
+    bib_body = re.sub(r"(?m)^\s*%.*$", "",
+                      Path(bib).read_text(encoding="utf-8"))
+    defined = set(re.findall(r"@\w+\{([^,]+),", bib_body))
+    return {"cited": len(cited), "in_bib": len(defined),
+            "missing": sorted(cited - defined),
+            "uncited": sorted(defined - cited)}
+
+
+def check_all(tex="paper/main.tex", numbers="paper/numbers.tex",
+              bib="paper/refs.bib"):
+    """Both checks plus the open \\todo count, as one line for the notebook."""
+    body = Path(tex).read_text(encoding="utf-8")
+    todos = len(re.findall(r"\\todo\{", re.sub(r"(?m)(?<!\\)%.*$", "", body)))
+    return {"macros": check_macros(tex, numbers),
+            "citations": check_citations(tex, bib),
+            "open_todos": todos}

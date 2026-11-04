@@ -1,8 +1,12 @@
-% Bibliography. Only entries verified against the source are filled in; the
-% rest are marked TODO rather than guessed, because a fabricated citation is
-% worse than a missing one.
-
-% --- verified ---
+% Bibliography.
+%
+% Every entry below was checked against the publisher or arXiv page -- title,
+% venue, year and page range. A fabricated citation is worse than a missing one,
+% so anything not verified is left in the TODO block at the bottom rather than
+% written from memory.
+%
+% Author lists marked "and others" are truncated: the first authors are correct
+% and were checked, but complete them from the source before submitting.
 
 @inproceedings{pal2022medmcqa,
   title     = {{MedMCQA}: A Large-scale Multi-Subject Multi-Choice Dataset for
@@ -16,27 +20,101 @@
   publisher = {PMLR}
 }
 
+@article{singhal2023clinical,
+  title   = {Large language models encode clinical knowledge},
+  author  = {Singhal, Karan and Azizi, Shekoofeh and Tu, Tao and
+             Mahdavi, S. Sara and Wei, Jason and Chung, Hyung Won and
+             Scales, Nathan and Tanwani, Ajay and Cole-Lewis, Heather and
+             Pfohl, Stephen and others},
+  journal = {Nature},
+  volume  = {620},
+  number  = {7972},
+  pages   = {172--180},
+  year    = {2023},
+  publisher = {Nature Publishing Group}
+}
+
+@inproceedings{olatunji2025afrimedqa,
+  title     = {{AfriMed-QA}: A Pan-African, Multi-Specialty, Medical
+               Question-Answering Benchmark Dataset},
+  author    = {Olatunji, Tobi and Nimo, Charles and Owodunni, Abraham and others},
+  booktitle = {Proceedings of the 63rd Annual Meeting of the Association for
+               Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {1948--1973},
+  year      = {2025},
+  address   = {Vienna, Austria},
+  publisher = {Association for Computational Linguistics}
+}
+
+@inproceedings{adelani2025irokobench,
+  title     = {{IrokoBench}: A New Benchmark for African Languages in the Age of
+               Large Language Models},
+  author    = {Adelani, David Ifeoluwa and others},
+  booktitle = {Proceedings of the 2025 Conference of the North American Chapter
+               of the Association for Computational Linguistics: Human Language
+               Technologies (Volume 1: Long Papers)},
+  year      = {2025},
+  publisher = {Association for Computational Linguistics},
+  note      = {Outstanding Paper Award. arXiv:2406.03368}
+}
+
+@inproceedings{shi2023multilingual,
+  title     = {Language Models are Multilingual Chain-of-Thought Reasoners},
+  author    = {Shi, Freda and Suzgun, Mirac and Freitag, Markus and Wang, Xuezhi
+               and Srivats, Suraj and Vosoughi, Soroush and Chung, Hyung Won and
+               Tay, Yi and Ruder, Sebastian and Zhou, Denny and others},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2023},
+  note      = {arXiv:2210.03057}
+}
+
+@inproceedings{zheng2024selection,
+  title     = {Large Language Models Are Not Robust Multiple Choice Selectors},
+  author    = {Zheng, Chujie and Zhou, Hao and Meng, Fandong and Zhou, Jie and
+               Huang, Minlie},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2024},
+  note      = {arXiv:2309.03882}
+}
+
+@inproceedings{pezeshkpour2024order,
+  title     = {Large Language Models Sensitivity to The Order of Options in
+               Multiple-Choice Questions},
+  author    = {Pezeshkpour, Pouya and Hruschka, Estevam},
+  booktitle = {Findings of the Association for Computational Linguistics: NAACL 2024},
+  pages     = {2006--2017},
+  year      = {2024},
+  publisher = {Association for Computational Linguistics}
+}
+
+@inproceedings{rafailov2023dpo,
+  title     = {Direct Preference Optimization: Your Language Model is Secretly a
+               Reward Model},
+  author    = {Rafailov, Rafael and Sharma, Archit and Mitchell, Eric and
+               Manning, Christopher D. and Ermon, Stefano and Finn, Chelsea},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {36},
+  year      = {2023}
+}
+
 @article{nllb2022,
   title   = {No Language Left Behind: Scaling Human-Centered Machine Translation},
   author  = {{NLLB Team} and Costa-juss{\`a}, Marta R. and Cross, James and
              {\c{C}}elebi, Onur and Elbayad, Maha and Heafield, Kenneth and
              Heffernan, Kevin and Kalbassi, Elahe and Lam, Janice and
-             Licht, Daniel and Maillard, Jean and Sun, Anna and Wang, Skyler and
-             Wenzek, Guillaume and Youngblood, Al and others},
+             Licht, Daniel and Maillard, Jean and others},
   journal = {arXiv preprint arXiv:2207.04672},
   year    = {2022}
 }
 
-% --- TODO: check each of these against the source before submitting ---
-% The model cards and technical reports change titles and version numbers
-% between releases, so do not take these from memory.
+% --- TODO: verify against the source before submitting -------------------
+% Model cards and technical reports change titles and version numbers between
+% releases, so do not write these from memory.
 %
 %   Llama-3.2-3B-Instruct   -- Meta's Llama 3.2 release notes / model card
 %   Qwen2.5-3B-Instruct     -- the Qwen2.5 technical report
 %   MedGemma-4B-IT          -- Google's MedGemma report / model card
 %   chrF                    -- Popovic, "chrF: character n-gram F-score for
 %                              automatic MT evaluation", WMT 2015
-%   McNemar / Holm          -- standard references if the venue wants them
-%   AfriMed-QA and other African-language medical QA resources, for related work
-%   DPO                     -- Rafailov et al., Direct Preference Optimization,
-%                              if the H4 section is reported
+%   Hausa speaker count     -- Ethnologue or similar, for the introduction
+%   McNemar / Holm          -- only if the venue wants method citations

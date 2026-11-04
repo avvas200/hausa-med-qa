@@ -60,28 +60,101 @@ registered before any model was run, and all deviations are logged.
 
 \section{Introduction}
 
-\todo{Two or three paragraphs. The shape:}
-\begin{itemize}
-  \item Hausa has 50--80 million speakers and almost no medical NLP evaluation.
-  \item Small open models are the ones that can plausibly be deployed in
-        low-resource clinical settings -- they fit on commodity hardware -- so
-        their behaviour in the target language is the practical question.
-  \item Benchmarks report English numbers. We ask what is left in Hausa, and we
-        pre-register the question so the answer is not chosen after the fact.
-  \item Contributions: (i) a paired English--Hausa medical MCQ set with human
-        validation; (ii) a pre-registered evaluation of three models with
-        decision rules fixed in advance; (iii) the observation that the usual
-        way of reporting such gaps -- a percentage drop -- hides that the
-        post-drop score is at or below a trivial baseline.
-\end{itemize}
+Large language models answer medical licensing questions well enough that the
+result is no longer surprising~\cite{singhal2023clinical}. They do so in
+English. Hausa is among the most widely spoken languages in
+Africa\todo{cite a speaker-count source, e.g. Ethnologue}, and it has almost no
+medical NLP evaluation at all. The two facts are usually reported in separate
+literatures, and the question that joins them is practical: if a clinician or a
+patient in northern Nigeria asks one of these models a medical question in
+Hausa, what is left of the ability the English benchmark measured?
+
+We ask this of small open models specifically -- three instruction-tuned systems
+of 3--4B parameters, including one medically adapted. Frontier models are
+interesting, but the models that can actually be deployed on local hardware, in
+a clinic without reliable connectivity or a budget for API calls, are the small
+open ones. They are also the ones that AfriMed-QA found struggle most on
+African medical content~\cite{olatunji2025afrimedqa}.
+
+The study is pre-registered. Hypotheses, thresholds and decision rules were
+fixed and committed before any model was run, and every departure from them is
+logged in the repository. This matters more than usual here, because the
+interesting result turned out to be a null one -- and a null is exactly the
+result that is easiest to talk oneself out of after the fact.
+
+Our contributions are: (i) a paired English--Hausa medical MCQ set of \NEval{}
+items with segment-level quality estimation and two-rater human validation,
+released with the annotation sheets; (ii) a pre-registered evaluation of three
+small open models with decision rules fixed in advance, reporting accuracy,
+answer stability under option reordering, and a translate-test probe; and
+(iii) the observation that the conventional way of reporting a multilingual gap
+-- as a percentage drop -- conceals whether the post-drop score is above a
+trivial baseline. Here, for two of three models, it is not.
 
 \section{Related work}
 
-\todo{Choose citations. The three strands: multilingual medical QA benchmarks
-and MedMCQA itself; evaluation of LLMs on African languages, AfriMed-QA and
-related resources; and position/format sensitivity in multiple-choice
-evaluation, which is why we report a majority-letter baseline and measure
-consistency under option reordering at all.}
+\paragraph{Medical question answering, in English.}
+MedMCQA~\cite{pal2022medmcqa} is one of the standard multiple-choice medical QA
+sets, drawn from Indian postgraduate entrance examinations, and is the source we
+sample from. MultiMedQA assembled six such datasets and showed that a large
+instruction-tuned model reaches a passing standard on USMLE-style
+questions~\cite{singhal2023clinical}. Both are English throughout, as is almost
+all of the medical QA literature these results come from. What they establish is
+a ceiling: whatever a model can do medically, it can do it in English.
+
+\paragraph{African languages, and African medical content.}
+IrokoBench~\cite{adelani2025irokobench} human-translated reasoning and knowledge
+benchmarks into seventeen African languages and found large gaps between English
+and African-language performance across ten open and four proprietary models,
+with the strongest open model reaching a fraction of the best proprietary one.
+AfriMed-QA~\cite{olatunji2025afrimedqa} approaches the problem from the other
+side: it collects medical questions authored across more than sixty African
+medical schools, capturing clinical content and disease prevalence that
+Western-sourced benchmarks miss, and reports that smaller edge-friendly models
+struggle to reach a passing score.
+
+These two leave a gap that this study occupies. IrokoBench covers African
+languages but general knowledge and reasoning rather than medicine; AfriMed-QA
+covers African medical content but poses it in English. Neither asks what
+happens to medical question answering when the question itself is in an African
+language. That is the question here, for one language, in depth, with the
+hypotheses fixed in advance.
+
+\paragraph{Translate-test.}
+Translating a non-English input into English and reasoning there is a standard
+strong baseline in multilingual evaluation~\cite{shi2023multilingual}, and
+IrokoBench finds it helps larger English-centric
+models~\cite{adelani2025irokobench}. We use it differently. H2 back-translates
+the Hausa items into English and re-asks, not to maximise a score but as a
+diagnostic: the fraction of the gap it recovers separates the part of the
+deficit that travels with the language of presentation from the part that does
+not. A model that recovers fully was never short of the medical knowledge; one
+that does not recover has lost something the round trip cannot restore.
+
+\paragraph{Multiple-choice evaluation is fragile.}
+Reported MCQ accuracy is less stable than it looks. Zheng et
+al.~\cite{zheng2024selection} show that models carry a selection bias toward
+particular option identifiers -- largely a token bias on the letters themselves
+rather than a positional one -- which makes a score depend on where the correct
+answer sits. Pezeshkpour and Hruschka~\cite{pezeshkpour2024order} report
+substantial swings on several benchmarks from reordering the options alone, and
+argue the effect concentrates where the model is uncertain between its top
+candidates.
+
+Three of our design choices follow directly. We report what a model scores by
+answering the most frequent letter and reading nothing, because a letter bias
+and a non-uniform answer key together make that a non-trivial score. We present
+every item in three option orders and register agreement across them as an
+outcome in its own right, since a model that is merely guessing will answer
+inconsistently even when its accuracy looks respectable. And we report a
+secondary scoring rule based on the probability of each letter token alongside
+the primary parsed one, which separates not knowing the answer from not
+following the answer format.
+
+\paragraph{Preference optimisation.}
+H4 asks whether self-generated preference pairs can close part of the gap, using
+direct preference optimisation~\cite{rafailov2023dpo} with hyperparameters
+reused unchanged from the authors' prior study, so the two remain comparable.
 
 \section{Data}
 
@@ -95,7 +168,7 @@ by subject with a fixed seed. MedMCQA contains a scraping artifact in which the
 letter pair ``rt'' is deleted from many words (``aery'' for artery); we repair it
 with a fixed rule list before filtering.
 
-Hausa versions are produced with NLLB-200-3.3B. Segment-level quality is
+Hausa versions are produced with NLLB-200-3.3B~\cite{nllb2022}. Segment-level quality is
 estimated by round-trip chrF1 with a second, distilled model, and flagged
 segments are reviewed by a native speaker who records one of \emph{keep},
 \emph{english} (use the English term, as is common for medical vocabulary in
