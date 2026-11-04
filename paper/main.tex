@@ -5,15 +5,18 @@
 % the macro, so the text cannot drift from the results.
 %
 % Compile on Overleaf (or arXiv itself): pdflatex -> bibtex -> pdflatex x2.
-% Check macros first:
-%   python -c "from src import paper, figures as F; print(paper.check_macros())"
+% Check it first -- an undefined macro renders as nothing, a missing cite as [?]:
+%   python -c "from src import paper; print(paper.check_all())"
 %
 % TODO BEFORE SUBMISSION -- these need a human, and are marked \todo{} below:
 %   * author names, affiliations, contact
+%   * a source for the Hausa speaker count
+%   * the H4 section, once notebook 03a has run
 %   * the second rater and second coder, credited with their consent (section 11
 %     of the pre-registration commits to this)
-%   * related work: this draft sketches the shape, you choose the citations
-%   * the H4 section, once notebook 03a has run
+%
+% Also: refs.bib still has a TODO block -- the model cards and chrF are not yet
+% cited, because they were not verifiable from memory.
 \documentclass[11pt,a4paper]{article}
 
 \usepackage[utf8]{inputenc}
@@ -48,10 +51,11 @@ points of accuracy, every gap significant after Holm correction. The more
 useful finding is the reference point: a trivial baseline that reads nothing and
 always answers the most frequent letter scores \BaselineP{}, and two of the three
 models fall at or below it in Hausa. Back-translating the Hausa items into
-English recovers roughly half the gap for two models but not demonstrably for
-the third, so the deficit is substantially, though not wholly, a matter of the
-language of presentation. Answers are also far less stable: agreement under
-option reordering falls by \ConsGapQwen{} for the worst model. An exploratory
+English recovers between half and two-thirds of the gap for two models but not
+demonstrably for the third, so the deficit is substantially, though not wholly,
+a matter of the language of presentation. Answers are also far less stable:
+agreement across three option orderings falls from \ConsEnQwen{} to
+\ConsHaQwen{} in the worst case. An exploratory
 error analysis of \ENRows{} discordant items attributes most of the damage to
 medical vocabulary lost in translation (\ETerm{}, 95\% CI \ETermLo{}--\ETermHi{}),
 usually in the question stem. All hypotheses, thresholds and decision rules were
@@ -78,9 +82,11 @@ African medical content~\cite{olatunji2025afrimedqa}.
 
 The study is pre-registered. Hypotheses, thresholds and decision rules were
 fixed and committed before any model was run, and every departure from them is
-logged in the repository. This matters more than usual here, because the
-interesting result turned out to be a null one -- and a null is exactly the
-result that is easiest to talk oneself out of after the fact.
+logged in the repository. This matters here because the finding is a
+deflationary one. The hypotheses themselves were supported, emphatically; what
+the registered baseline reveals is that the surviving Hausa performance is
+mostly not performance at all. A result of that shape is the easiest kind to
+soften after the fact, by choosing a comparison that flatters it.
 
 Our contributions are: (i) a paired English--Hausa medical MCQ set of \NEval{}
 items with segment-level quality estimation and two-rater human validation,
@@ -176,13 +182,14 @@ Hausa) or \emph{edit}. \FallbackItems{} items retain at least one English option
 after review; a pre-registered sensitivity analysis excludes them.
 
 \paragraph{Human validation.}
-Two native speakers independently rated 75 items for adequacy on a 1--5 scale.
-Mean adequacy was \ValAdequacyOne{} and \ValAdequacyTwo{}, with \ValGeFourOne{}
-and \ValGeFourTwo{} of items rated 4 or better, and no medical-term errors
-marked by either rater. Quadratic-weighted $\kappa$ is \ValKappa{}: ratings
-concentrate at 4--5, where $\kappa$ is unstable, so we report it as computed and
-rely on the agreement that matters -- both raters judged \ValGeFourTwo{} or more
-of the items acceptable. \ValFlagged{} item was flagged by either rater.
+Two native speakers independently rated \ValN{} items for adequacy on a 1--5
+scale. Mean adequacy was \ValAdequacyOne{} and \ValAdequacyTwo{}, with
+\ValGeFourOnePct{}\% and \ValGeFourTwoPct{}\% of items rated 4 or better, and no
+medical-term errors marked by either rater. Quadratic-weighted $\kappa$ is
+\ValKappa{}: ratings concentrate at 4--5, where $\kappa$ is unstable, so we
+report it as computed and rely on the agreement that matters -- both raters
+judged at least \ValMinGeFourPct{}\% of the items acceptable. \ValFlagged{} item
+was flagged by either rater.
 Both raters reported checking question stems closely and options less closely,
 so this validates stem quality better than option quality; we return to this in
 the limitations.
@@ -244,11 +251,15 @@ All three models lose a large fraction of their accuracy
 correction.
 
 \paragraph{The gap is not the headline.}
-Llama's Hausa accuracy (\HaLlama{}) and Qwen's (\HaQwen{}) are at or below the
-\BaselineP{} majority-letter baseline. Only MedGemma (\HaMedGemma{}) remains
-above it, by under four points. Reporting these systems as retaining ``some''
+\NBelowBaseline{} of the \NModels{} models are at or below the \BaselineP{}
+majority-letter baseline in Hausa: Llama at \HaLlama{} (\MarginLlama{} points)
+and Qwen at \HaQwen{} (\MarginQwen{}). Only MedGemma (\HaMedGemma{}) is above
+it, by \MarginMedGemma{} points. Reporting these systems as retaining ``some''
 medical ability in Hausa would be an artifact of comparing against chance rather
-than against the strongest trivial strategy available.
+than against the strongest trivial strategy available. The comparison is not a
+rhetorical device: the majority-letter strategy is what the selection bias
+documented by Zheng et al.~\cite{zheng2024selection} converges on when a model
+has nothing else to go on.
 
 \begin{figure}[t]
   \centering
@@ -282,19 +293,33 @@ the options are shuffled.
   \label{fig:parse}
 \end{figure}
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{../results/figures/fig4_scoring.pdf}
+  \caption{Hausa accuracy for the same model outputs under the primary
+  (text-parsed) and secondary (letter-probability) scoring rules. Only Qwen
+  moves appreciably.}
+  \label{fig:scoring}
+\end{figure}
+
 \paragraph{Format following, and what the scoring rule carries.}
 Llama and MedGemma emit a parseable letter for every Hausa item. Qwen parses
 only \ParseHaQwen{} of its Hausa answers against \ParseEnQwen{} in English
 (Figure~\ref{fig:parse}). Scoring the identical outputs by the probability of
 each letter token rather than by parsing the text moves Qwen from \HaQwen{} to
 \LpHaQwen{}, while Llama (\HaLlama{} to \LpHaLlama{}) and MedGemma
-(\HaMedGemma{} to \LpHaMedGemma{}) barely move. Reporting only the parsed rule
-overstates Qwen's deficit; reporting only letter probability hides a real
-failure to follow instructions in Hausa. We report both.
+(\HaMedGemma{} to \LpHaMedGemma{}) barely move (Figure~\ref{fig:scoring}).
+Reporting only the parsed rule overstates Qwen's deficit; reporting only letter
+probability hides a real failure to follow instructions in Hausa. We report
+both. Note that even under the more generous rule Qwen remains below the
+\BaselineP{} baseline.
 
 \paragraph{Sensitivity.}
-H1 is unchanged when items flagged by either rater are dropped, and when items
-retaining an English option are dropped.
+Both pre-registered sensitivity analyses leave H1 intact. Dropping items flagged
+by either rater (\SensAN{} remain) moves no model's gap by more than
+\SensAShift{} points, and dropping items that retain an English option
+(\SensBN{} remain) by no more than \SensBShift{}. The gap is therefore not an
+artifact of the handful of items where the translation was known to be weak.
 
 \begin{figure}[t]
   \centering
@@ -356,13 +381,17 @@ independently double-coded.
 
 \section{Conclusion}
 
-Posed in Hausa, three small open medical-capable models lose most of their
-accuracy and much of their stability, and two of the three end up at or below a
-baseline that reads nothing at all. The failure is concentrated in medical
-vocabulary, mostly in the question stem, and is largely recoverable by
-translating back into English -- which suggests the bottleneck for these models
-is the language of presentation more than the medicine. We release the paired
-set, the human annotation sheets, the pre-registration and every deviation.
+Posed in Hausa, three small open models -- two general-purpose, one medically
+adapted -- lose most of their accuracy and much of their stability, and
+\NBelowBaseline{} of the \NModels{} end up at or below a baseline that reads
+nothing at all. Where the Hausa text is the cause, it is usually medical
+vocabulary, and usually in the question stem. For the two general-purpose
+models, back-translating into English recovers much of the gap, which points at
+the language of presentation rather than the medicine as the bottleneck; for the
+medically adapted one it does not, and we cannot say from these data whether
+that is because its deficit is of a different kind or because its smaller gap
+leaves less to recover. We release the paired set, the human annotation sheets,
+the pre-registration and every deviation.
 
 \section*{Acknowledgements}
 \todo{Credit the second rater and the second coder by name, with their consent

@@ -14,6 +14,7 @@ import json
 import re
 from pathlib import Path
 
+from . import config as C
 from . import figures as F
 
 MODEL_MACRO = {"llama": "Llama", "qwen": "Qwen", "medgemma": "MedGemma"}
@@ -40,7 +41,8 @@ def macros(res) -> dict:
 
     m["NEval"] = str(p["n_items"])
     m["Chance"] = "0.25"
-    m["BaselineP"] = _f3(b["majority_letter_baseline"]["p0"])
+    base = b["majority_letter_baseline"]["p0"]
+    m["BaselineP"] = _f3(base)
 
     for k, M in MODEL_MACRO.items():
         m[f"En{M}"] = _f3(acc[k]["en_p0"])
@@ -62,6 +64,12 @@ def macros(res) -> dict:
         m[f"ConsEn{M}"] = _f3(h3["cons_en"])
         m[f"ConsHa{M}"] = _f3(h3["cons_ha"])
         m[f"ConsGap{M}"] = _f3(h3["ci"]["point"])
+        # Signed distance from the majority-letter baseline, in points. The
+        # sign is what the paper's central claim turns on, so it is computed
+        # here rather than asserted in the prose.
+        m[f"Margin{M}"] = _pp(acc[k]["ha_p0"] - base)
+    m["NBelowBaseline"] = str(sum(acc[k]["ha_p0"] <= base for k in MODEL_MACRO))
+    m["NModels"] = str(len(MODEL_MACRO))
 
     # E1
     e = res["e1"]["primary_pooled"]
@@ -83,12 +91,30 @@ def macros(res) -> dict:
 
     # Human validation of the translations
     v = res["validation"]
+    m["ValN"] = str(C.N_HUMAN_VALIDATION)
     m["ValAdequacyOne"] = _f2(v["rater1"]["mean_adequacy"])
     m["ValAdequacyTwo"] = _f2(v["rater2"]["mean_adequacy"])
     m["ValGeFourOne"] = _f2(v["rater1"]["prop_adequacy_ge4"])
     m["ValGeFourTwo"] = _f2(v["rater2"]["prop_adequacy_ge4"])
+    # Percentages read better than proportions in prose ("98.7\%" not "0.99").
+    m["ValGeFourOnePct"] = _pp(v["rater1"]["prop_adequacy_ge4"])
+    m["ValGeFourTwoPct"] = _pp(v["rater2"]["prop_adequacy_ge4"])
+    m["ValMinGeFourPct"] = _pp(min(v["rater1"]["prop_adequacy_ge4"],
+                                   v["rater2"]["prop_adequacy_ge4"]))
     m["ValKappa"] = _f2(v["kappa_quadratic"])
     m["ValFlagged"] = str(v["items_flagged_by_any_rater"])
+
+    # Sensitivity analyses: the n each one leaves, and the largest change it
+    # makes to any model's H1 gap. "Unchanged" is a claim, so give it a number.
+    for key, name in [("sens_a_no_rater_flagged", "SensA"),
+                      ("sens_b_no_english_options", "SensB")]:
+        blk = b.get(key)
+        if not blk:
+            continue
+        m[f"{name}N"] = str(blk["n_items"])
+        worst = max(abs(blk["H1"][k]["diff"] - p["H1"][k]["diff"])
+                    for k in MODEL_MACRO)
+        m[f"{name}Shift"] = _pp(worst)
 
     # Corpus construction
     man = res["manifest"]
