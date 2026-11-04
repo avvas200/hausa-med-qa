@@ -33,6 +33,10 @@
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 \input{numbers.tex}
 
+% If the abstract leads with the baseline, the title can too. Swap if you
+% prefer the sharper framing:
+%   \title{Below a trivial baseline: medical question answering in Hausa\\
+%   with small open models}
 \title{Medical question answering collapses in Hausa:\\
 a pre-registered pilot on three small open models}
 
@@ -43,23 +47,27 @@ a pre-registered pilot on three small open models}
 \maketitle
 
 \begin{abstract}
-We ask how much accuracy and answer stability small open language models lose
-when medical multiple-choice questions are posed in Hausa rather than English.
+A system that reads nothing and always answers the most frequent letter scores
+\BaselineP{} on our Hausa medical multiple-choice set. \NBelowBaseline{} of the
+\NModels{} small open models we evaluate do not beat it. We lead with that
+because the usual summary of a multilingual result -- a percentage-point drop
+from English -- does not say whether what survives the drop is performance at
+all.
+
 On a paired English--Hausa set of \NEval{} MedMCQA items, three instruction-tuned
-models of 3--4B parameters lose between \GapMedGemma{} and \GapQwen{} percentage
-points of accuracy, every gap significant after Holm correction. The more
-useful finding is the reference point: a trivial baseline that reads nothing and
-always answers the most frequent letter scores \BaselineP{}, and two of the three
-models fall at or below it in Hausa. Back-translating the Hausa items into
-English recovers between half and two-thirds of the gap for two models but not
-demonstrably for the third, so the deficit is substantially, though not wholly,
-a matter of the language of presentation. Answers are also far less stable:
-agreement across three option orderings falls from \ConsEnQwen{} to
-\ConsHaQwen{} in the worst case. An exploratory
-error analysis of \ENRows{} discordant items attributes most of the damage to
-medical vocabulary lost in translation (\ETerm{}, 95\% CI \ETermLo{}--\ETermHi{}),
-usually in the question stem. All hypotheses, thresholds and decision rules were
-registered before any model was run, and all deviations are logged.
+models of 3--4B parameters lose between \GapMedGemma{} and \GapQwen{} points of
+accuracy, every gap significant after Holm correction. Back-translating the
+Hausa items into English recovers between half and two-thirds of the gap for the
+two general-purpose models but not demonstrably for the medically adapted one,
+so the deficit is substantially, though not wholly, a matter of the language of
+presentation. Answers are also far less stable: agreement across three option
+orderings falls from \ConsEnQwen{} to \ConsHaQwen{} in the worst case. An
+exploratory error analysis of \ENRows{} discordant items attributes most of the
+damage to medical vocabulary lost in translation (\ETerm{}, 95\% CI
+\ETermLo{}--\ETermHi{}), usually in the question stem.
+
+All hypotheses, thresholds and decision rules were registered before any model
+was run, and all deviations are logged.
 \end{abstract}
 
 \section{Introduction}
@@ -95,7 +103,7 @@ small open models with decision rules fixed in advance, reporting accuracy,
 answer stability under option reordering, and a translate-test probe; and
 (iii) the observation that the conventional way of reporting a multilingual gap
 -- as a percentage drop -- conceals whether the post-drop score is above a
-trivial baseline. Here, for two of three models, it is not.
+trivial baseline. Here, for \NBelowBaseline{} of the \NModels{}, it is not.
 
 \section{Related work}
 
