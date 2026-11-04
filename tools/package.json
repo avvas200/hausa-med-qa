@@ -1,0 +1,8 @@
+{
+  "name": "hausa-med-qa-tools",
+  "private": true,
+  "description": "Builds the Word version of the manuscript from paper/main.tex. Run: npm install",
+  "dependencies": {
+    "docx": "^9.0.0"
+  }
+}

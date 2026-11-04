@@ -24,9 +24,9 @@ Supporting provenance, all checkable with `git log`:
 - [x] 03a · H4 pilot gate — run; **stop**. Parse rate 0.400, projected 122 pairs against a floor of 200, implied skill rate zero
 - [·] 03 · DPO intervention (H4) — **not run**, on the gate's evidence (`results/h4_pilot_gate.json`). Reported as such, not dropped
 - [x] 04 · Analysis and figures — five figures, three paper tables, and paper/numbers.tex
-- [ ] Report — paper/main.tex drafted, H1–H4 and related work written; needs authors, a speaker-count source, and the acknowledgements
+- [ ] Report — `paper/main.tex` complete: H1–H4, related work, authors and acknowledgements, 0 open TODOs. Needs a compile and an arXiv endorsement
 
-## Results so far (H1–H3)
+## Results
 
 ![English versus Hausa accuracy for three small open models, against a majority-letter baseline](results/figures/fig1_accuracy.png)
 
@@ -114,6 +114,47 @@ the first pass placed **no** error on the question stem, where the re-code place
 See `PREREGISTRATION.md` § 13, deviation 5, committed before any row was re-coded. The sample, its
 seed and the four categories are unchanged. E1 remains exploratory with no hypothesis attached.
 
+### H4 — not run, on the pilot gate's evidence
+
+H4 proposed closing part of the gap with preference pairs the model generates for itself. A
+pre-registered pilot on 60 training items (240 chains) was run first to check the procedure had
+anything to work with. It did not, and H4 is reported as **not run** rather than dropped.
+
+| signal | result | threshold |
+|---|---|---|
+| parse rate | **0.400** | 0.9 |
+| projected pairs over the full pool | **122** | 200 |
+| implied skill rate | **0.000** | — |
+
+43 of the 60 items produced no correct chain in four samples and none produced more than two.
+Accuracy over all 240 chains is 0.079; over the 96 that state a letter it is 0.198, 95% Wilson
+0.131–0.289 — an interval that contains chance, so the model is **indistinguishable from chance**
+on the chains it completes, not below it.
+
+Why the chains fail, classified automatically over all 240 (categories overlap):
+
+| failure mode | all 240 | the 144 unparseable |
+|---|---|---|
+| echoes the prompt | 127 (52.9%) | 63 (43.8%) |
+| carries a Swahili marker | 78 (32.5%) | 44 (30.6%) |
+| cut off at the token budget | 12 (5.0%) | 6 (4.2%) |
+| degenerate repetition | 1 (0.4%) | 0 |
+
+The budget is not the constraint: the median chain is 87 tokens against a cap of 384. Asked to
+produce Hausa rather than to pick a letter, the model echoes the instruction back, switches into
+Swahili — the African language best represented in its training data — or stops without
+answering. Under the baseline protocol the same model parses 1.00 of its Hausa answers, because
+that protocol only ever asks it for one letter.
+
+**That is the sharper finding, and it is not the one H4 was designed to produce.** The H1–H3 gap
+is a lower bound on the practical one, and a forced-choice benchmark structurally cannot see the
+difference. Evidence: [`results/h4_pilot_gate.json`](results/h4_pilot_gate.json),
+[`results/h4_failure_modes.json`](results/h4_failure_modes.json) and
+[`results/h4_pilot_chains.csv`](results/h4_pilot_chains.csv).
+
+No substitute intervention model was tried, no prompt was retuned until the gate passed, and no
+threshold was lowered. H1–H3 were already known when the gate ran.
+
 ## Layout
 
 ```
@@ -127,15 +168,20 @@ src/stats.py                McNemar, paired bootstrap, Holm, H1–H4 decision ru
 src/e1.py                   E1 sampling, coding sheet, validation, summary
 src/dpo.py                  H4 CoT sampling, preference pairs, pilot gate
 src/figures.py              report figures and paper tables (no Drive, no GPU)
-src/paper.py                emits paper/numbers.tex from results; checks the paper's macros
+src/paper.py                emits paper/numbers.tex; checks macros and citations;
+                            builds the flat arXiv upload folder
 paper/main.tex              the manuscript; every number is a macro, none typed by hand
 paper/numbers.tex           generated — do not edit
+paper/refs.bib              bibliography
+paper/submission/           generated upload bundle — gitignored, rebuild it
 notebooks/01_data_preparation.ipynb
 notebooks/01b_translation_qe.ipynb
 notebooks/02_baseline_evaluation.ipynb
 notebooks/02b_error_analysis.ipynb
 notebooks/03a_dpo_pilot.ipynb
 notebooks/04_analysis_and_figures.ipynb
+src/paper_docx.py           parses main.tex into a document model for the Word build
+tools/build_docx.js         turns that model into paper/submission/*.docx
 tests/preflight_h4.py       non-GPU pre-flight for the H4 gate; run before booking a GPU
 data/README.md              provenance, licence and attribution for the released sheets
 results/                    small committed outputs (manifests, metrics)
@@ -146,7 +192,23 @@ Large artefacts (datasets, translations, model outputs) live on Google Drive und
 
 ## Running
 
-Open each notebook in Colab with a GPU runtime and run top to bottom. Every stage caches to Drive and resumes after a disconnect.
+Notebooks 01, 01b, 02 and the generation step of 03a need a GPU: open them in Colab with a T4 and
+run top to bottom. Every stage caches to Drive and resumes after a disconnect.
+
+Everything else runs locally in seconds, with no Drive and no GPU — 02b (error analysis), 04
+(figures, tables and `paper/numbers.tex`), and re-scoring a cached 03a run after a parser change.
+
+```
+PYTHONPATH=. python tests/preflight_h4.py                     # before booking a GPU
+python -c "from src import figures as F; F.all_figures(F.load())"
+python -c "from src import paper; print(paper.check_all())"   # macros, citations, open TODOs
+python -c "from src import paper; print(paper.build_submission())"
+python -c "from src import paper; print(paper.build_docx())"      # Word version
+```
+
+`build_submission` writes the flat arXiv bundle to `paper/submission/`; `build_docx` adds a
+Word version of the same manuscript, generated from `paper/main.tex` rather than maintained
+beside it. The Word build needs Node: `npm install` inside `tools/` once.
 
 ## Data and scope
 

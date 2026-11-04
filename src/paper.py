@@ -297,3 +297,36 @@ def build_submission(out_dir="paper/submission", figures="results/figures"):
     if missing:
         raise FileNotFoundError(f"main.tex references missing figures: {missing}")
     return {"dir": str(out), "files": copied, "n": len(copied)}
+
+
+def build_docx(out="paper/submission/hausa-med-qa.docx",
+               model="paper/submission/paper_model.json"):
+    """Build the Word version of the manuscript from paper/main.tex.
+
+    Two steps: src.paper_docx parses the LaTeX into a document model, then
+    tools/build_docx.js turns that into the file. The .docx is generated, never
+    edited -- the numbers in it come from results/ by way of numbers.tex, so a
+    hand-edited copy would silently disagree with the paper.
+
+    Needs Node and the `docx` package: `npm install` inside tools/.
+    """
+    import os
+    import subprocess
+
+    from . import paper_docx
+
+    paper_docx.write_model(model)
+    env = dict(os.environ)
+    for candidate in (Path("tools/node_modules"), Path("node_modules")):
+        if candidate.is_dir():
+            env["NODE_PATH"] = str(candidate.resolve())
+            break
+    proc = subprocess.run(["node", "tools/build_docx.js", model, out],
+                          capture_output=True, text=True, env=env)
+    if proc.returncode != 0:
+        hint = ""
+        if "Cannot find module 'docx'" in proc.stderr:
+            hint = "\nRun `npm install` inside tools/ first."
+        raise RuntimeError(
+            f"building {out} failed:\n{proc.stderr.strip()[:600]}{hint}")
+    return {"path": out, "message": proc.stdout.strip()}
