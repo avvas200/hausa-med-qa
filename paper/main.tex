@@ -40,7 +40,9 @@
 \title{Medical question answering collapses in Hausa:\\
 a pre-registered pilot on three small open models}
 
-\author{\todo{authors, affiliations, contact}}
+\author{Abbas Sani\\
+  Mewar University\\
+  \texttt{abbassani721@gmail.com}}
 \date{\today}
 
 \begin{document}
@@ -83,8 +85,8 @@ was run, and all deviations are logged.
 
 Large language models answer medical licensing questions well enough that the
 result is no longer surprising~\cite{singhal2023clinical}. They do so in
-English. Hausa is among the most widely spoken languages in
-Africa\todo{cite a speaker-count source, e.g. Ethnologue}, and it has almost no
+English. Hausa is among the most widely spoken languages in Africa, 
+with roughly 80 million speakers~\cite{ethnologue_hausa}, and it has almost no
 medical NLP evaluation at all. The two facts are usually reported in separate
 literatures, and the question that joins them is practical: if a clinician or a
 patient in northern Nigeria asks one of these models a medical question in
@@ -230,10 +232,10 @@ the model's first tokens are the letter) and a secondary letter-probability
 scoring rule reported alongside the primary parsed one.
 
 \paragraph{Models and conditions.}
-Llama-3.2-3B-Instruct, Qwen2.5-3B-Instruct and MedGemma-4B-IT, all bf16. Each
-item is presented in English and in Hausa under a fixed zero-shot template, in
-the canonical option order and in two seeded reorderings, plus a
-back-translated-to-English condition for H2.
+Llama-3.2-3B-Instruct~\cite{llama32}, Qwen2.5-3B-Instruct~\cite{qwen25} and
+MedGemma-4B-IT~\cite{medgemma}, all bf16. Each item is presented in English and in Hausa
+under a fixed zero-shot template, in the canonical option order and in two seeded reorderings,
+plus a back-translated-to-English condition for H2.
 
 \paragraph{Statistics.}
 Paired comparisons use an exact McNemar test with Holm correction across the
@@ -509,8 +511,8 @@ paired set, the human annotation sheets, the pre-registration and every
 deviation.
 
 \section*{Acknowledgements}
-\todo{Credit the second rater and the second coder by name, with their consent
--- section 11 of the pre-registration commits to this.}
+We thank Mr Rufa'i Yusuf Zakari for the second translation-adequacy rating and
+Usman Haruna for the verification pass on the error coding, both of whom consented to being named.
 
 \section*{Data and code availability}
 Code, pre-registration, deviation log, human annotation sheets and all result
