@@ -60,6 +60,9 @@ def load(results_dir="results"):
     out["h4_gate"] = json.loads(gate.read_text("utf-8")) if gate.exists() else None
     h4 = r / "h4_results.json"
     out["h4"] = json.loads(h4.read_text("utf-8")) if h4.exists() else None
+    fm = r / "h4_failure_modes.json"
+    out["h4_failure_modes"] = (json.loads(fm.read_text("utf-8"))
+                               if fm.exists() else None)
     return out
 
 

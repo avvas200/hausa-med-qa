@@ -152,6 +152,31 @@ def macros(res) -> dict:
         zero = g["n_correct_per_item"].get("0", 0)
         m["GateZeroItems"] = str(zero)
         m["GateZeroPct"] = _pp(zero / g["n_items"]) if g["n_items"] else "0.0"
+
+    # Why the chains fail. Reported over the unparseable chains, which is the
+    # population the parse rate is about, with the overlapping flags beside the
+    # mutually exclusive primary label.
+    fm = res.get("h4_failure_modes")
+    if fm and fm.get("n_chains"):
+        m["FailChains"] = str(fm["n_chains"])
+        m["FailUnparsed"] = str(fm["n_unparsed"])
+        u = fm["unparsed_only"]
+        names = {"code_switch": "CodeSwitch", "repetition": "Repetition",
+                 "prompt_echo": "PromptEcho", "truncated": "Truncated",
+                 "empty": "Empty", "other": "Other"}
+        for key, M in names.items():
+            v = u["primary"].get(key, {"n": 0, "prop": 0.0})
+            m[f"FailU{M}N"] = str(v["n"])
+            m[f"FailU{M}"] = _pp(v["prop"])
+        for key, M in (("swahili", "Swahili"), ("repetition", "Repetition"),
+                       ("truncated", "Truncated"), ("prompt_echo", "PromptEcho")):
+            v = u["any_of"].get(key, {"n": 0, "prop": 0.0})
+            m[f"FailAny{M}N"] = str(v["n"])
+            m[f"FailAny{M}"] = _pp(v["prop"])
+        if fm.get("tokens"):
+            m["FailMedianTokens"] = str(fm["tokens"]["median"])
+            m["FailAtBudget"] = str(fm["tokens"]["at_budget"])
+            m["FailTokenBudget"] = str(fm["tokens"]["max_new"])
     return m
 
 
