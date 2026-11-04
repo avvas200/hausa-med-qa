@@ -1,0 +1,168 @@
+{
+  "n_chains": 240,
+  "n_parsed": 96,
+  "n_unparsed": 144,
+  "parse_rate": 0.4,
+  "all_chains": {
+    "n": 240,
+    "primary": {
+      "empty": {
+        "n": 0,
+        "prop": 0.0
+      },
+      "repetition": {
+        "n": 1,
+        "prop": 0.004
+      },
+      "code_switch": {
+        "n": 78,
+        "prop": 0.325
+      },
+      "prompt_echo": {
+        "n": 80,
+        "prop": 0.333
+      },
+      "truncated": {
+        "n": 2,
+        "prop": 0.008
+      },
+      "other": {
+        "n": 79,
+        "prop": 0.329
+      }
+    },
+    "any_of": {
+      "swahili": {
+        "n": 78,
+        "prop": 0.325
+      },
+      "repetition": {
+        "n": 1,
+        "prop": 0.004
+      },
+      "truncated": {
+        "n": 12,
+        "prop": 0.05
+      },
+      "prompt_echo": {
+        "n": 127,
+        "prop": 0.529
+      }
+    }
+  },
+  "unparsed_only": {
+    "n": 144,
+    "primary": {
+      "empty": {
+        "n": 0,
+        "prop": 0.0
+      },
+      "repetition": {
+        "n": 0,
+        "prop": 0.0
+      },
+      "code_switch": {
+        "n": 44,
+        "prop": 0.306
+      },
+      "prompt_echo": {
+        "n": 38,
+        "prop": 0.264
+      },
+      "truncated": {
+        "n": 1,
+        "prop": 0.007
+      },
+      "other": {
+        "n": 61,
+        "prop": 0.424
+      }
+    },
+    "any_of": {
+      "swahili": {
+        "n": 44,
+        "prop": 0.306
+      },
+      "repetition": {
+        "n": 0,
+        "prop": 0.0
+      },
+      "truncated": {
+        "n": 6,
+        "prop": 0.042
+      },
+      "prompt_echo": {
+        "n": 63,
+        "prop": 0.438
+      }
+    }
+  },
+  "parsed_only": {
+    "n": 96,
+    "primary": {
+      "empty": {
+        "n": 0,
+        "prop": 0.0
+      },
+      "repetition": {
+        "n": 1,
+        "prop": 0.01
+      },
+      "code_switch": {
+        "n": 34,
+        "prop": 0.354
+      },
+      "prompt_echo": {
+        "n": 42,
+        "prop": 0.438
+      },
+      "truncated": {
+        "n": 1,
+        "prop": 0.01
+      },
+      "other": {
+        "n": 18,
+        "prop": 0.188
+      }
+    },
+    "any_of": {
+      "swahili": {
+        "n": 34,
+        "prop": 0.354
+      },
+      "repetition": {
+        "n": 1,
+        "prop": 0.01
+      },
+      "truncated": {
+        "n": 6,
+        "prop": 0.062
+      },
+      "prompt_echo": {
+        "n": 64,
+        "prop": 0.667
+      }
+    }
+  },
+  "tokens": {
+    "max_new": 384,
+    "median": 87,
+    "at_budget": 12
+  },
+  "swahili_markers": [
+    "jibu",
+    "swali",
+    "hivyo",
+    "ambayo",
+    "ambacho",
+    "ilikuwa",
+    "mtiririko",
+    "jawabu",
+    "chagua",
+    "kwa hivyo",
+    "la sahihi",
+    "kwa sababu",
+    "yafuatayo"
+  ],
+  "caveat": "Code-switching is detected by a hand-written Swahili marker list that excludes words shared with Hausa, so the count is a lower bound and the list needs a native speaker's review. Truncation is only reported when a tokenizer is supplied."
+}
