@@ -85,6 +85,17 @@ cases = [
      "no cue word; bare letter in the tail"),
     ("Tunani mai tsawo...\nC", 2, "bare letter alone on the final line"),
     ("Babu wata amsa da ta dace a nan.", -1, "no letter at all -> unparseable"),
+    # Lower-case regressions. Accepting a bare lower-case letter after the cue
+    # turned ordinary Hausa into answer A: "a", "da" and "ba" are among the
+    # commonest words in the language, so the rule manufactured the very
+    # letter bias this study measures.
+    ("Babu amsa a nan", -1, "cue + the preposition 'a' is not an answer"),
+    ("Ba zan iya ba da amsa a kan wannan tambaya ba", -1, "the same in a full sentence"),
+    ("amsa a cikin rubutun", -1, "cue + 'a cikin' is not an answer"),
+    ("Bayani...\namsa: c", 2, "lower case IS an answer after a colon"),
+    ("Tunani...\nc", 2, "or alone on the closing line"),
+    ("Bayani...\nJibu la sahihi ni C.", 2, "Swahili cue, caught by the tail rule"),
+    ("Ketamine ne.\nJibu: X = A", 0, "Swahili, trailing letter"),
     ("A cikin wannan yanayin, Aspirin shine magani.", -1,
      "'A' opens a sentence and 'Aspirin' starts with A: must NOT be read as a letter"),
 ]
@@ -282,6 +293,63 @@ for label, rows_e, npairs in [
     except Exception as e:
         fail += 1
         print(f"   FAIL {label}: {type(e).__name__}: {e}")
+
+print("6b. failure-mode classification")
+# Fragments taken from results/h4_pilot_chains.csv, so the classifier is tested
+# against what the model actually produced rather than invented text.
+LOOP = "taka shi ne kwata ya kamata shi, " * 12
+check("a loop scores high on repetition", DPO.repetition_ratio(LOOP) > 0.5, True)
+check("ordinary prose does not",
+      DPO.repetition_ratio("Angiotensin-converting enzyme inhibitors sune "
+                           "maganin da ya dace ga hauhawar jini a cikin koda.") < 0.5,
+      True)
+check("a short string is not scored", DPO.repetition_ratio("Amsa: B"), 0.0)
+
+cases = [
+    ("Bayani...\nJibu la sahihi ni C.", "code_switch", "Swahili 'jibu'"),
+    ("Ketamine ne.\nhivyo X = A", "code_switch", "Swahili 'hivyo'"),
+    (LOOP, "repetition", "a loop outranks every other label"),
+    ("Tambaya: Lactogen: Harafin amsarka D", "prompt_echo", "echoes the template"),
+    ("Maganin cututtukan myeloid ana amsa A. Imatinib.", "other", "a clean short answer"),
+    ("   ", "empty", "whitespace"),
+]
+for text, want, why in cases:
+    check(f"classify ({why})", DPO.classify_chain(text)["primary"], want)
+
+# Words shared by Hausa and Swahili must not trip the marker list, or ordinary
+# Hausa counts as code-switching and the headline number is wrong.
+for hausa in ("Amsar da ta dace ita ce B", "Zabin ya kamata ya zama C",
+              "Wannan shine amsar da yake daidai: D"):
+    check(f"plain Hausa is not flagged ({hausa[:22]}...)",
+          DPO.classify_chain(hausa)["swahili"], False)
+
+check("truncation is not claimed without a tokenizer",
+      DPO.classify_chain("a" * 5000)["truncated"], False)
+
+
+class LenTok:
+    """Stands in for a real tokenizer: one token per whitespace-separated word."""
+
+    def __call__(self, t, add_special_tokens=False):
+        return {"input_ids": list(range(len(t.split())))}
+
+
+check("truncation is detected with one",
+      DPO.classify_chain(" ".join(["w"] * (C.DPO_MAX_NEW_TOKENS + 5)),
+                         tok=LenTok())["truncated"], True)
+
+fm_rows = [{"id": "a", "gold": 0, "k": 2, "chains": ["Amsa: A", "Jibu ni B"],
+            "picks": [0, 1], "correct": [True, False]},
+           {"id": "b", "gold": 0, "k": 2, "chains": [LOOP, "   "],
+            "picks": [-1, -1], "correct": [False, False]}]
+fm = DPO.failure_modes(fm_rows)
+check("counts every chain", fm["n_chains"], 4)
+check("parsed + unparsed covers them", fm["n_parsed"] + fm["n_unparsed"], 4)
+check("primary labels partition the unparsed group",
+      sum(v["n"] for v in fm["unparsed_only"]["primary"].values()),
+      fm["n_unparsed"])
+check("the caveat travels with the numbers", "lower bound" in fm["caveat"], True)
+check("an empty pool does not crash", DPO.failure_modes([])["n_chains"], 0)
 
 print("7. inspection_sample and write_json")
 check("inspection_sample caps at the pair count", len(DPO.inspection_sample(pairs, n=10)),

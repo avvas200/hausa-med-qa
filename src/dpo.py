@@ -32,15 +32,26 @@ from . import data as D
 # Final-answer extraction. Unlike evaluate.parse_letter, which reads the FIRST
 # letter because generation is prefilled with "Amsa:" and capped at 8 tokens,
 # a chain of thought ends with its answer, so these search from the END.
-_FINAL = re.compile(
-    r"(?i:amsa|answer)\W{0,5}(?:(?i:ita ce|shine|ne|is)\W{1,4})?([ABCDabcd])(?![A-Za-z])")
+_FINAL_UPPER = re.compile(
+    r"(?i:amsa|answer)\W{0,5}(?:(?i:ita ce|shine|ne|is)\W{1,4})?([ABCD])(?![A-Za-z])")
+# A lower-case letter counts only where punctuation marks it as the answer
+# token -- "amsa: c", "answer = d". Without that guard the cue plus a bare
+# letter matches ordinary Hausa: "amsa a cikin..." ("answer in...") scores as
+# A, and "a" is among the commonest words in the language. That would inflate
+# the parse rate and bias extraction toward the very letter this study's
+# majority-letter baseline concerns.
+_FINAL_LOWER = re.compile(
+    r"(?i:amsa|answer)\s*[:=–-]\s*\(?([abcd])\)?(?![A-Za-z])")
 # The bare-letter fallback is anchored to the very END of the chain, not merely
 # to its closing lines. Hausa sentences open with "A" constantly ("A cikin...",
 # "A nan...", "A karshe..."), so a rule that accepted a letter anywhere in the
 # tail reads that preposition as an answer: it would both inflate the parse rate
 # and bias every cue-less chain towards A, on a task whose headline finding is
 # about an answer-letter baseline.
-_TAIL = re.compile(r"(?<![A-Za-z])\(?([ABCDabcd])[.)\]:,]*\s*$")
+_TAIL_UPPER = re.compile(r"(?<![A-Za-z])\(?([ABCD])[.)\]:,]*\s*$")
+# Same asymmetry in the fallback: a lower-case letter is only an answer when it
+# stands alone on the closing line, never when it ends a Hausa sentence.
+_TAIL_LOWER = re.compile(r"(?m)^\s*\(?([abcd])\)?[.)\]:,]*\s*$")
 
 
 def final_letter(text: str) -> int:
@@ -50,16 +61,28 @@ def final_letter(text: str) -> int:
     chain, then a bare letter ending the chain. The second rule is anchored to
     the end so that a letter mentioned while reasoning -- or a Hausa sentence
     opening with the preposition "A" -- is not mistaken for the conclusion.
-    Both rules accept a lower-case letter; the model is asked for "Amsa: C" but
-    a 3B model at temperature 0.8 does not reliably capitalise.
+
+    A 3B model at temperature 0.8 does not reliably capitalise, so lower case
+    is accepted, but only where punctuation or layout marks the letter as the
+    answer rather than as a word. Hausa's commonest words include "a", "da"
+    and "ba"; a rule generous enough to read "amsa a cikin..." as A would
+    manufacture exactly the letter bias this study measures.
     """
-    matches = list(_FINAL.finditer(text))
-    if matches:
-        return C.LETTERS.index(matches[-1].group(1).upper())
+    best = None
+    for rx in (_FINAL_UPPER, _FINAL_LOWER):
+        for m in rx.finditer(text):
+            if best is None or m.end() > best.end():
+                best = m
+    if best is not None:
+        return C.LETTERS.index(best.group(1).upper())
     tail = "\n".join([ln for ln in text.strip().splitlines() if ln.strip()][-2:])
-    matches = list(_TAIL.finditer(tail))
-    if matches:
-        return C.LETTERS.index(matches[-1].group(1).upper())
+    best = None
+    for rx in (_TAIL_UPPER, _TAIL_LOWER):
+        for m in rx.finditer(tail):
+            if best is None or m.end() > best.end():
+                best = m
+    if best is not None:
+        return C.LETTERS.index(best.group(1).upper())
     return -1
 
 
@@ -247,3 +270,131 @@ def write_json(obj, path):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(obj, f, indent=2, ensure_ascii=False)
     return D.sha256(path)
+
+
+# ---------- why the chains fail (notebook 03a, after the gate) ----------
+#
+# The gate says how often a chain is unusable. This says why, which is what the
+# paper needs: a model that code-switches is a different finding from a model
+# that runs out of tokens.
+
+# Swahili function words and answer vocabulary that are NOT Hausa. Llama falls
+# back to Swahili, the African language it has most of, when asked to produce
+# Hausa -- so these are the marker set.
+#
+# THIS LIST IS A HEURISTIC AND THE AUTHOR, A NATIVE HAUSA SPEAKER, MUST CHECK
+# IT. Words that exist in both languages are deliberately excluded, even common
+# Swahili ones: "ni", "ya", "wa", "yake" and "sahihi" all occur in Hausa, and
+# including them would turn ordinary Hausa into a false positive. The count
+# this produces is therefore a lower bound on code-switching.
+SWAHILI_MARKERS = (
+    "jibu", "swali", "hivyo", "ambayo", "ambacho", "ilikuwa", "mtiririko",
+    "jawabu", "chagua", "kwa hivyo", "la sahihi", "kwa sababu", "yafuatayo",
+)
+
+# Template fragments: a chain that reproduces these is echoing the prompt back
+# rather than answering it.
+_ECHO = re.compile(r"(?i)(tambaya\s*:|ga tambaya mai za|inda x shi ne|"
+                   r"ka yi bayani a ta)")
+_OPTION_BLOCK = re.compile(r"(?m)^\s*A[.):]\s+\S.*\n\s*B[.):]\s+", re.S)
+_WORD = re.compile(r"\w+", re.UNICODE)
+
+
+def repetition_ratio(text: str, n: int = 5) -> float:
+    """Share of word n-grams that are duplicates. A chain stuck in a loop sits
+    near 1.0; ordinary prose is well under 0.5."""
+    words = _WORD.findall(text.lower())
+    if len(words) < n * 2:
+        return 0.0
+    grams = [tuple(words[i:i + n]) for i in range(len(words) - n + 1)]
+    return 1.0 - len(set(grams)) / len(grams)
+
+
+def classify_chain(text, tok=None, max_new=C.DPO_MAX_NEW_TOKENS,
+                   rep_threshold=0.5) -> dict:
+    """Independent flags for one chain, plus a single `primary` label.
+
+    `tok` is any tokenizer; pass one to detect truncation exactly (the chain
+    used its whole budget). Without it truncation is not claimed at all, rather
+    than guessed from character length -- Hausa's token-per-word ratio under an
+    English-centric tokenizer makes a character proxy meaningless.
+    """
+    t = (text or "").strip()
+    low = t.lower()
+    n_tok = len(tok(t, add_special_tokens=False)["input_ids"]) if tok else None
+    parsed = final_letter(t) >= 0
+    flags = {
+        "parsed": parsed,
+        # A chain that yielded a letter is never "empty", however terse:
+        # "Amsa: B" is a complete answer, just not a derivation.
+        "empty": (not parsed) and len(t) < 20,
+        "swahili": any(w in low for w in SWAHILI_MARKERS),
+        "repetition": repetition_ratio(t) >= rep_threshold,
+        "truncated": (n_tok is not None and n_tok >= max_new),
+        "prompt_echo": bool(_ECHO.search(t)) or bool(_OPTION_BLOCK.search(t)),
+    }
+    # Precedence runs cause before symptom: a looping chain is also truncated,
+    # and the loop is the thing worth reporting.
+    if flags["empty"]:
+        primary = "empty"
+    elif flags["repetition"]:
+        primary = "repetition"
+    elif flags["swahili"]:
+        primary = "code_switch"
+    elif flags["prompt_echo"]:
+        primary = "prompt_echo"
+    elif flags["truncated"]:
+        primary = "truncated"
+    else:
+        primary = "other"
+    flags["primary"] = primary
+    flags["n_tokens"] = n_tok
+    return flags
+
+
+def failure_modes(rows, tok=None) -> dict:
+    """Summarise why chains fail, over every chain in the cached pool.
+
+    Reported twice: over all chains, and over the unparseable ones only, which
+    is the population the paper's parse rate is about.
+    """
+    chains = [(c, final_letter(c) >= 0) for r in rows for c in r["chains"]]
+    if not chains:
+        return {"n_chains": 0}
+    cls = [classify_chain(c, tok=tok) for c, _ in chains]
+    parsed = [f for f in cls if f["parsed"]]
+    unparsed = [f for f in cls if not f["parsed"]]
+
+    def tally(group):
+        n = len(group)
+        if not n:
+            return {"n": 0}
+        out = {"n": n, "primary": {}, "any_of": {}}
+        for lab in ("empty", "repetition", "code_switch", "prompt_echo",
+                    "truncated", "other"):
+            c = sum(f["primary"] == lab for f in group)
+            out["primary"][lab] = {"n": c, "prop": round(c / n, 3)}
+        for flag in ("swahili", "repetition", "truncated", "prompt_echo"):
+            c = sum(f[flag] for f in group)
+            out["any_of"][flag] = {"n": c, "prop": round(c / n, 3)}
+        return out
+
+    toks = [f["n_tokens"] for f in cls if f["n_tokens"] is not None]
+    return {
+        "n_chains": len(cls),
+        "n_parsed": len(parsed),
+        "n_unparsed": len(unparsed),
+        "parse_rate": round(len(parsed) / len(cls), 3),
+        "all_chains": tally(cls),
+        "unparsed_only": tally(unparsed),
+        "parsed_only": tally(parsed),
+        "tokens": ({"max_new": C.DPO_MAX_NEW_TOKENS,
+                    "median": sorted(toks)[len(toks) // 2],
+                    "at_budget": sum(t >= C.DPO_MAX_NEW_TOKENS for t in toks)}
+                   if toks else None),
+        "swahili_markers": list(SWAHILI_MARKERS),
+        "caveat": ("Code-switching is detected by a hand-written Swahili marker "
+                   "list that excludes words shared with Hausa, so the count is "
+                   "a lower bound and the list needs a native speaker's review. "
+                   "Truncation is only reported when a tokenizer is supplied."),
+    }
