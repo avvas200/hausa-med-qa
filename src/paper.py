@@ -128,11 +128,30 @@ def macros(res) -> dict:
     # H4, only once the gate has run
     g = res.get("h4_gate")
     if g:
+        from . import e1 as E1  # wilson lives there; avoid a circular import
         m["GateParse"] = _f3(g["parse_rate"])
         m["GateAcc"] = _f3(g["accuracy_all_samples"])
         m["GatePairs"] = str(g["pairs"])
         m["GateProjected"] = str(g["projected_pairs_full_pool"])
         m["GateLuck"] = _f2(g["estimated_luck_share_of_chosen"])
+        m["GateItems"] = str(g["n_items"])
+        m["GateK"] = str(g["k"])
+        m["GateSamples"] = str(g["n_samples"])
+        m["GateThreshold"] = str(g["min_pairs_threshold"])
+        m["GateUnparsedPct"] = _pp(1 - g["parse_rate"])
+        # Accuracy among chains that do state a letter, with an interval. The
+        # point estimate sits under chance, but the interval covers it, so the
+        # paper must say "indistinguishable from chance", not "below" it.
+        n_parsed = round(g["parse_rate"] * g["n_samples"])
+        k_corr = round(g["accuracy_parsed_only"] * n_parsed)
+        lo, hi = E1.wilson(k_corr, n_parsed)
+        m["GateParsedN"] = str(n_parsed)
+        m["GateAccParsed"] = _f3(g["accuracy_parsed_only"])
+        m["GateAccParsedLo"] = _f3(lo)
+        m["GateAccParsedHi"] = _f3(hi)
+        zero = g["n_correct_per_item"].get("0", 0)
+        m["GateZeroItems"] = str(zero)
+        m["GateZeroPct"] = _pp(zero / g["n_items"]) if g["n_items"] else "0.0"
     return m
 
 

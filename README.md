@@ -21,10 +21,10 @@ Supporting provenance, all checkable with `git log`:
 - [x] Pre-registration frozen
 - [x] 02 · Baseline evaluation (H1–H3)
 - [x] 02b · E1 error analysis (exploratory) — re-coded under deviation 5; single-coder plus a verification pass
-- [ ] 03a · H4 pilot gate — pre-flighted and prompt corrected; needs one GPU session
-- [ ] 03 · DPO intervention (H4) — gated on 03a
-- [x] 04 · Analysis and figures — H1–H3 and E1 done; the H4 section fills itself in once 03a runs
-- [ ] Report — paper/main.tex drafted; needs related work, authors, and the H4 section
+- [x] 03a · H4 pilot gate — run; **stop**. Parse rate 0.400, projected 122 pairs against a floor of 200, implied skill rate zero
+- [·] 03 · DPO intervention (H4) — **not run**, on the gate's evidence (`results/h4_pilot_gate.json`). Reported as such, not dropped
+- [x] 04 · Analysis and figures — five figures, three paper tables, and paper/numbers.tex
+- [ ] Report — paper/main.tex drafted, H1–H4 and related work written; needs authors, a speaker-count source, and the acknowledgements
 
 ## Results so far (H1–H3)
 
