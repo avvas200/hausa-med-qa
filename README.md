@@ -24,7 +24,7 @@ Supporting provenance, all checkable with `git log`:
 - [ ] 03a · H4 pilot gate — pre-flighted and prompt corrected; needs one GPU session
 - [ ] 03 · DPO intervention (H4) — gated on 03a
 - [x] 04 · Analysis and figures — H1–H3 and E1 done; the H4 section fills itself in once 03a runs
-- [ ] Report
+- [ ] Report — paper/main.tex drafted; needs related work, authors, and the H4 section
 
 ## Results so far (H1–H3)
 
@@ -127,6 +127,9 @@ src/stats.py                McNemar, paired bootstrap, Holm, H1–H4 decision ru
 src/e1.py                   E1 sampling, coding sheet, validation, summary
 src/dpo.py                  H4 CoT sampling, preference pairs, pilot gate
 src/figures.py              report figures and paper tables (no Drive, no GPU)
+src/paper.py                emits paper/numbers.tex from results; checks the paper's macros
+paper/main.tex              the manuscript; every number is a macro, none typed by hand
+paper/numbers.tex           generated — do not edit
 notebooks/01_data_preparation.ipynb
 notebooks/01b_translation_qe.ipynb
 notebooks/02_baseline_evaluation.ipynb
