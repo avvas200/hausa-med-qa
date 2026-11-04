@@ -68,8 +68,9 @@ damage to medical vocabulary lost in translation (\ETerm{}, 95\% CI
 
 A fourth registered hypothesis proposed closing the gap with self-generated
 preference pairs. Its pilot gate found nothing to train on: asked to reason in
-Hausa rather than to pick a letter, the model code-switches to Swahili, loops,
-or never states an answer, and only \GateParse{} of chains are parseable. We
+Hausa rather than to pick a letter, the model echoes the prompt back, switches
+into Swahili, or simply stops without answering; only \GateParse{} of chains
+are parseable. We
 report that intervention as not run, which is itself the sharper result -- a
 forced-choice benchmark cannot see a model that has no generative command of
 the language at all.
@@ -390,16 +391,55 @@ skill rate is zero, meaning the ``chosen'' side of every pair is consistent with
 a lucky guess. Training on such pairs would teach a preference for guessing.
 
 \paragraph{Why the chains fail.}
-Reading them is more informative than the rates. Three failure modes dominate,
-and only the third is about medicine. First, the model \textbf{code-switches out of
-Hausa}, most often into Swahili: chains end ``Jibu la sahihi ni C'' or
-``Jibu: X = A'' rather than with the requested \emph{Amsa}, and carry Swahili
-function words (\emph{hivyo}, \emph{ambayo}, \emph{kwa hivyo}) in otherwise
-Hausa text. Second, some chains \textbf{degenerate into repetition}, looping a clause
-until the token budget is exhausted. Third, some \textbf{echo the prompt} instead of
-answering it, restating the instruction or emitting a fresh question stem with
-its own option list. Chains that do finish are typically a bare assertion of an
-answer rather than a derivation.
+We classified all \FailChains{} chains automatically
+(Table~\ref{tab:failmodes}). Two modes dominate and a third, which an informal
+reading of a handful of chains had suggested, turns out to be negligible.
+
+\begin{table}[t]
+  \centering
+  \begin{tabular}{lrr}
+    \toprule
+     & all \FailChains{} chains & the \FailUnparsed{} unparseable \\
+    \midrule
+    echoes the prompt        & \FailAllPromptEchoN{} (\FailAllPromptEcho{}\%)
+                             & \FailAnyPromptEchoN{} (\FailAnyPromptEcho{}\%) \\
+    carries a Swahili marker & \FailAllSwahiliN{} (\FailAllSwahili{}\%)
+                             & \FailAnySwahiliN{} (\FailAnySwahili{}\%) \\
+    cut off at the budget    & \FailAllTruncatedN{} (\FailAllTruncated{}\%)
+                             & \FailAnyTruncatedN{} (\FailAnyTruncated{}\%) \\
+    degenerate repetition    & \FailAllRepetitionN{} (\FailAllRepetition{}\%)
+                             & \FailAnyRepetitionN{} (\FailAnyRepetition{}\%) \\
+    \bottomrule
+  \end{tabular}
+  \caption{Failure modes among the pilot's chains. Categories overlap. Swahili
+  detection uses a marker list that excludes words Hausa and Swahili share, so
+  it is a lower bound.}
+  \label{tab:failmodes}
+\end{table}
+
+First, \FailAllPromptEcho{}\% of chains \textbf{echo the prompt} rather than
+answering it -- restating the instruction, or emitting a fresh question stem
+with its own option list. Second, \FailAllSwahili{}\% \textbf{code-switch out of
+Hausa}, almost always into Swahili: chains close ``Jibu la sahihi ni C'' or
+``Jibu: X = A'' instead of the requested \emph{Amsa}, and carry Swahili
+function words (\emph{hivyo}, \emph{ambayo}, \emph{kwa hivyo}) through otherwise
+Hausa text. Swahili is the African language best represented in the model's
+training data, and it appears to be what the model falls back to when asked to
+produce Hausa. Because the marker list excludes vocabulary the two languages
+share, this is a lower bound.
+
+Neither mode is an artifact of the generation budget. The median chain is
+\FailMedianTokens{} tokens against a cap of \FailTokenBudget{}, only
+\FailAtBudget{} of \FailChains{} chains reach it, and exactly
+\FailAllRepetitionN{} chain degenerates into repetition. The model is not
+running out of room to reason; it stops early, having produced something other
+than Hausa reasoning.
+
+The same pathologies appear in the chains that \emph{do} yield a letter:
+\FailParsedPromptEcho{}\% of them echo the prompt and
+\FailParsedCodeSwitch{}\% carry Swahili. A parseable answer here is typically a
+bare assertion rather than a derivation, which is why the pairs carry no signal
+even where they exist.
 
 This is the substantive finding, and it is not the one H4 was designed to
 produce. Our baseline evaluation constrains the model to emit a single letter

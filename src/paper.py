@@ -168,11 +168,25 @@ def macros(res) -> dict:
             v = u["primary"].get(key, {"n": 0, "prop": 0.0})
             m[f"FailU{M}N"] = str(v["n"])
             m[f"FailU{M}"] = _pp(v["prop"])
-        for key, M in (("swahili", "Swahili"), ("repetition", "Repetition"),
-                       ("truncated", "Truncated"), ("prompt_echo", "PromptEcho")):
+        flags = (("swahili", "Swahili"), ("repetition", "Repetition"),
+                 ("truncated", "Truncated"), ("prompt_echo", "PromptEcho"))
+        for key, M in flags:
             v = u["any_of"].get(key, {"n": 0, "prop": 0.0})
             m[f"FailAny{M}N"] = str(v["n"])
             m[f"FailAny{M}"] = _pp(v["prop"])
+        # The same flags over every chain, parsed or not: a chain that echoes
+        # the prompt and still emits a letter is as diagnostic as one that
+        # does not.
+        a = fm["all_chains"]
+        for key, M in flags:
+            v = a["any_of"].get(key, {"n": 0, "prop": 0.0})
+            m[f"FailAll{M}N"] = str(v["n"])
+            m[f"FailAll{M}"] = _pp(v["prop"])
+        for key, M in (("prompt_echo", "PromptEcho"), ("code_switch", "CodeSwitch")):
+            v = fm["parsed_only"]["any_of"].get(
+                "swahili" if key == "code_switch" else key, {"n": 0, "prop": 0.0})
+            m[f"FailParsed{M}N"] = str(v["n"])
+            m[f"FailParsed{M}"] = _pp(v["prop"])
         if fm.get("tokens"):
             m["FailMedianTokens"] = str(fm["tokens"]["median"])
             m["FailAtBudget"] = str(fm["tokens"]["at_budget"])
