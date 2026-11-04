@@ -259,3 +259,41 @@ def check_all(tex="paper/main.tex", numbers="paper/numbers.tex",
     return {"macros": check_macros(tex, numbers),
             "citations": check_citations(tex, bib),
             "open_todos": todos}
+
+
+def build_submission(out_dir="paper/submission", figures="results/figures"):
+    """Assemble a flat folder ready to upload to arXiv or Overleaf.
+
+    arXiv wants the source as one directory with no nesting, while the
+    repository keeps figures under results/. Rather than ask anyone to retype
+    five ``includegraphics`` paths at the last minute -- the kind of edit that
+    silently drops a figure -- main.tex uses bare filenames and a
+    ``graphicspath`` that lists both layouts. This copies the pieces into one
+    place so either works.
+    """
+    import shutil
+
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    copied = []
+    for name in ("main.tex", "numbers.tex", "refs.bib"):
+        src = Path("paper") / name
+        if not src.exists():
+            raise FileNotFoundError(f"{src} is missing")
+        shutil.copy2(src, out / name)
+        copied.append(name)
+    figs = sorted(Path(figures).glob("fig*.pdf"))
+    if not figs:
+        raise FileNotFoundError(
+            f"no fig*.pdf in {figures} -- run notebook 04 first")
+    for f in figs:
+        shutil.copy2(f, out / f.name)
+        copied.append(f.name)
+
+    # Every figure the text asks for must have arrived.
+    wanted = set(re.findall(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}",
+                            (out / "main.tex").read_text(encoding="utf-8")))
+    missing = sorted(w for w in wanted if not (out / Path(w).name).exists())
+    if missing:
+        raise FileNotFoundError(f"main.tex references missing figures: {missing}")
+    return {"dir": str(out), "files": copied, "n": len(copied)}

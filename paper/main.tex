@@ -5,6 +5,11 @@
 % the macro, so the text cannot drift from the results.
 %
 % Compile on Overleaf (or arXiv itself): pdflatex -> bibtex -> pdflatex x2.
+% For a flat upload bundle (arXiv wants one directory, no nesting):
+%   python -c "from src import paper; print(paper.build_submission())"
+% -> paper/submission/ with the .tex, .bib and the five figure PDFs together.
+% Figure paths are bare filenames resolved by \graphicspath, so the same
+% main.tex compiles here and in that folder without editing.
 % Check it first -- an undefined macro renders as nothing, a missing cite as [?]:
 %   python -c "from src import paper; print(paper.check_all())"
 %
@@ -24,6 +29,10 @@
 \usepackage{lmodern}
 \usepackage[margin=1in]{geometry}
 \usepackage{graphicx}
+% Look for figures in the repository layout first, then beside this file.
+% The second entry is what makes an arXiv upload work: there, every file
+% sits in one flat directory, so ../results/figures/ points at nothing.
+\graphicspath{{../results/figures/}{./}{figures/}}
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{url}
@@ -86,7 +95,7 @@ was run, and all deviations are logged.
 Large language models answer medical licensing questions well enough that the
 result is no longer surprising~\cite{singhal2023clinical}. They do so in
 English. Hausa is among the most widely spoken languages in Africa, 
-with roughly 80 million speakers~\cite{ethnologue_hausa}, and it has almost no
+with roughly 80 million speakers~\cite{ethnologue}, and it has almost no
 medical NLP evaluation at all. The two facts are usually reported in separate
 literatures, and the question that joins them is practical: if a clinician or a
 patient in northern Nigeria asks one of these models a medical question in
@@ -194,7 +203,7 @@ letter pair ``rt'' is deleted from many words (``aery'' for artery); we repair i
 with a fixed rule list before filtering.
 
 Hausa versions are produced with NLLB-200-3.3B~\cite{nllb2022}. Segment-level quality is
-estimated by round-trip chrF1 with a second, distilled model, and flagged
+estimated by round-trip chrF1~\cite{popovic2015chrf} with a second, distilled model, and flagged
 segments are reviewed by a native speaker who records one of \emph{keep},
 \emph{english} (use the English term, as is common for medical vocabulary in
 Hausa) or \emph{edit}. \FallbackItems{} items retain at least one English option
@@ -238,8 +247,8 @@ under a fixed zero-shot template, in the canonical option order and in two seede
 plus a back-translated-to-English condition for H2.
 
 \paragraph{Statistics.}
-Paired comparisons use an exact McNemar test with Holm correction across the
-three models, and 95\% confidence intervals from a paired bootstrap with 10{,}000
+Paired comparisons use an exact McNemar test~\cite{mcnemar1947} with Holm
+correction~\cite{holm1979} across the three models, and 95\% confidence intervals from a paired bootstrap with 10{,}000
 resamples. Consistency (H3) is the proportion of items answered identically
 across all three option orders.
 
@@ -254,7 +263,7 @@ below should be read against it.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{../results/figures/fig1_accuracy.pdf}
+  \includegraphics[width=\linewidth]{fig1_accuracy.pdf}
   \caption{English and Hausa accuracy for each model, against the
   majority-letter baseline (\BaselineP{}) and chance. Two of the three models
   fall at or below the baseline in Hausa.}
@@ -283,7 +292,7 @@ has nothing else to go on.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{../results/figures/fig2_effects.pdf}
+  \includegraphics[width=\linewidth]{fig2_effects.pdf}
   \caption{The three pre-registered effects with 95\% paired-bootstrap
   intervals. Grey marks the one decision rule of nine that is not met.}
   \label{fig:effects}
@@ -307,7 +316,7 @@ the options are shuffled.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{../results/figures/fig3_parse_rate.pdf}
+  \includegraphics[width=\linewidth]{fig3_parse_rate.pdf}
   \caption{Proportion of answers that could be parsed as a letter. Qwen is the
   exception, and its Hausa deficit is partly a format-following failure.}
   \label{fig:parse}
@@ -315,7 +324,7 @@ the options are shuffled.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{../results/figures/fig4_scoring.pdf}
+  \includegraphics[width=\linewidth]{fig4_scoring.pdf}
   \caption{Hausa accuracy for the same model outputs under the primary
   (text-parsed) and secondary (letter-probability) scoring rules. Only Qwen
   moves appreciably.}
@@ -343,7 +352,7 @@ artifact of the handful of items where the translation was known to be weak.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{../results/figures/fig5_e1_errors.pdf}
+  \includegraphics[width=\linewidth]{fig5_e1_errors.pdf}
   \caption{Exploratory error analysis of \ENRows{} items answered correctly in
   English and wrongly in Hausa.}
   \label{fig:errors}
