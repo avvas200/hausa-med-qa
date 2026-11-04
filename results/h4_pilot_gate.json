@@ -1,0 +1,26 @@
+{
+  "n_items": 60,
+  "k": 4,
+  "n_samples": 240,
+  "parse_rate": 0.4,
+  "accuracy_all_samples": 0.079,
+  "accuracy_parsed_only": 0.198,
+  "n_correct_per_item": {
+    "0": 43,
+    "1": 15,
+    "2": 2,
+    "3": 0,
+    "4": 0
+  },
+  "pairs": 17,
+  "pair_yield_rate": 0.283,
+  "projected_pairs_full_pool": 122,
+  "min_pairs_threshold": 200,
+  "estimated_skill_rate": 0.0,
+  "estimated_luck_share_of_chosen": 1.0,
+  "reference_points": {
+    "chance": 0.25,
+    "majority_letter_baseline_p0": 0.318,
+    "greedy_letter_only_ha_p0": 0.276
+  }
+}
