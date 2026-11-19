@@ -24,7 +24,7 @@ Supporting provenance, all checkable with `git log`:
 - [x] 03a · H4 pilot gate — run; **stop**. Parse rate 0.400, projected 122 pairs against a floor of 200, implied skill rate zero
 - [·] 03 · DPO intervention (H4) — **not run**, on the gate's evidence (`results/h4_pilot_gate.json`). Reported as such, not dropped
 - [x] 04 · Analysis and figures — five figures, three paper tables, and paper/numbers.tex
-- [ ] Report — `paper/main.tex` complete: H1–H4, related work, authors and acknowledgements, 0 open TODOs. Needs a compile and an arXiv endorsement
+- [x] Report — Preprint is ready on arXiv https://arxiv.org/abs/2611.20823
 
 ## Results
 
